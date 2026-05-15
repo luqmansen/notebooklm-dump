@@ -4,6 +4,11 @@ const REPO  = 'notebooklm-dump';
 const PAT_KEY = 'gh_pat';
 const MAX_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB release-asset cap
 
+// Cloudflare Worker upload proxy. Required because uploads.github.com does not
+// send CORS headers — see worker.js for the proxy code and README for deploy steps.
+// Leave empty to attempt direct upload (will fail with a CORS error in the browser).
+const UPLOAD_PROXY_BASE = ''; // e.g. 'https://notebooklm-upload.<sub>.workers.dev'
+
 // ---------- DOM ----------
 const $authCard   = document.getElementById('auth-card');
 const $uploadCard = document.getElementById('upload-card');
@@ -13,7 +18,6 @@ const $authStatus = document.getElementById('auth-status');
 
 const $file        = document.getElementById('file');
 const $title       = document.getElementById('title');
-const $artist      = document.getElementById('artist');
 const $uploadBtn   = document.getElementById('upload-btn');
 const $logoutBtn   = document.getElementById('logout-btn');
 const $progressWrap = document.getElementById('progress-wrap');
@@ -46,6 +50,27 @@ function base64FromString(str) {
   // tracks.json is small; this is safe.
   return btoa(unescape(encodeURIComponent(str)));
 }
+
+function titleizeFromFilename(name) {
+  const noExt = name.replace(/\.[^.]+$/, '');
+  const spaced = noExt.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return spaced.split(' ').map(w => {
+    if (!w) return w;
+    if (/[A-Z]/.test(w)) return w; // preserve internal capitals (MapReduce, etc.)
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join(' ');
+}
+
+let titleManuallyEdited = false;
+$title.addEventListener('input', () => { titleManuallyEdited = true; });
+$file.addEventListener('change', () => {
+  const f = $file.files[0];
+  if (!f) return;
+  if (!titleManuallyEdited || !$title.value.trim()) {
+    $title.value = titleizeFromFilename(f.name);
+    titleManuallyEdited = false;
+  }
+});
 
 // ---------- auth ----------
 async function validatePat(token) {
@@ -115,10 +140,22 @@ async function createRelease(token, trackId, title) {
   return res.json();
 }
 
-function uploadAsset(uploadUrlTemplate, file, token, onProgress) {
-  // upload_url comes back like "https://uploads.github.com/.../assets{?name,label}"
-  const cleaned = uploadUrlTemplate.replace(/\{[^}]*\}$/, '');
-  const url = `${cleaned}?name=${encodeURIComponent(file.name)}`;
+function uploadAsset(release, file, token, onProgress) {
+  let url;
+  if (UPLOAD_PROXY_BASE) {
+    const params = new URLSearchParams({
+      owner: OWNER,
+      repo: REPO,
+      release_id: String(release.id),
+      name: file.name,
+    });
+    url = `${UPLOAD_PROXY_BASE.replace(/\/$/, '')}/?${params}`;
+  } else {
+    // Direct (will fail with CORS in the browser; kept as a fallback path).
+    const cleaned = release.upload_url.replace(/\{[^}]*\}$/, '');
+    url = `${cleaned}?name=${encodeURIComponent(file.name)}`;
+  }
+
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
@@ -135,7 +172,11 @@ function uploadAsset(uploadUrlTemplate, file, token, onProgress) {
         reject(new Error(`uploadAsset failed: ${xhr.status} ${xhr.responseText}`));
       }
     };
-    xhr.onerror = () => reject(new Error('uploadAsset network error (possibly CORS — check console)'));
+    xhr.onerror = () => reject(new Error(
+      UPLOAD_PROXY_BASE
+        ? 'uploadAsset network error — check Worker is deployed and reachable'
+        : 'uploadAsset blocked by CORS — set UPLOAD_PROXY_BASE in uploader.js (see README)'
+    ));
     xhr.send(file);
   });
 }
@@ -175,12 +216,10 @@ $uploadBtn.addEventListener('click', async () => {
   const token  = localStorage.getItem(PAT_KEY);
   const file   = $file.files[0];
   const title  = $title.value.trim();
-  const artist = $artist.value.trim();
 
   if (!token)         return setStatus($uploadStatus, 'Not authenticated.', 'err');
   if (!file)          return setStatus($uploadStatus, 'Pick a file first.', 'err');
   if (!title)         return setStatus($uploadStatus, 'Title is required.', 'err');
-  if (!artist)        return setStatus($uploadStatus, 'Artist / source is required.', 'err');
   if (file.size > MAX_BYTES) {
     return setStatus($uploadStatus, `File is ${fmtBytes(file.size)}, exceeds 2 GB release-asset limit.`, 'err');
   }
@@ -196,7 +235,7 @@ $uploadBtn.addEventListener('click', async () => {
 
     setStatus($uploadStatus, `2/3 Uploading ${fmtBytes(file.size)}...`);
     $progressWrap.classList.remove('hidden');
-    const asset = await uploadAsset(release.upload_url, file, token, (pct) => {
+    const asset = await uploadAsset(release, file, token, (pct) => {
       $progressBar.style.width = `${(pct * 100).toFixed(1)}%`;
     });
 
@@ -204,7 +243,6 @@ $uploadBtn.addEventListener('click', async () => {
     const entry = {
       id: trackId,
       title,
-      artist,
       url: asset.browser_download_url,
     };
     await appendTrack(token, entry);
@@ -215,7 +253,7 @@ $uploadBtn.addEventListener('click', async () => {
       'ok');
     $file.value = '';
     $title.value = '';
-    $artist.value = '';
+    titleManuallyEdited = false;
   } catch (e) {
     console.error(e);
     setStatus($uploadStatus, `Failed: ${e.message}`, 'err');

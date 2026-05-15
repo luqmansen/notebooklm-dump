@@ -38,12 +38,14 @@ function renderList() {
     const li = document.createElement('li');
     li.className = 'track';
     li.dataset.id = t.id;
-    li.innerHTML = `
-      <div class="track-title"></div>
-      <div class="track-artist"></div>
-    `;
-    li.querySelector('.track-title').textContent  = t.title;
-    li.querySelector('.track-artist').textContent = t.artist;
+    li.innerHTML = `<div class="track-title"></div>`;
+    li.querySelector('.track-title').textContent = t.title;
+    if (t.artist) {
+      const artist = document.createElement('div');
+      artist.className = 'track-artist';
+      artist.textContent = t.artist;
+      li.appendChild(artist);
+    }
     li.addEventListener('click', () => selectTrack(t));
     $tracks.appendChild(li);
   }
@@ -53,7 +55,8 @@ function selectTrack(track) {
   active = track;
   $np.classList.remove('empty');
   $title.textContent  = track.title;
-  $artist.textContent = track.artist;
+  $artist.textContent = track.artist || '';
+  $artist.style.display = track.artist ? '' : 'none';
   document.querySelectorAll('.track').forEach(el => {
     el.classList.toggle('active', el.dataset.id === track.id);
   });
