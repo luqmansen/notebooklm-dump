@@ -150,16 +150,28 @@ $resetSwBtn.addEventListener('click', async () => {
 });
 
 // ---------- library (existing tracks.json) ----------
+// Read directly from raw.githubusercontent.com so the library reflects the
+// latest commit on main immediately after a Contents API write — no need to
+// wait for Pages to rebuild (~30–60s). Cache-buster bypasses Fastly's edge cache.
+const TRACKS_RAW_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/tracks.json`;
+
 async function loadLibrary() {
   $library.innerHTML = '<div class="queue-empty">Loading…</div>';
-  // Bypass HTTP cache so we get the live tracks.json after any change.
-  const res = await fetch(`tracks.json?_=${Date.now()}`, { cache: 'no-store' });
-  if (!res.ok) {
-    $library.innerHTML = `<div class="queue-empty">Failed to load tracks.json (${res.status})</div>`;
-    return;
+  try {
+    const res = await fetch(`${TRACKS_RAW_URL}?_=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const tracks = await res.json();
+    renderLibrary(tracks);
+  } catch (e) {
+    console.warn('raw fetch failed, falling back to Pages-served tracks.json', e);
+    try {
+      const res = await fetch(`tracks.json?_=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${res.status}`);
+      renderLibrary(await res.json());
+    } catch (e2) {
+      $library.innerHTML = `<div class="queue-empty">Failed to load tracks.json (${e2.message})</div>`;
+    }
   }
-  const tracks = await res.json();
-  renderLibrary(tracks);
 }
 
 function renderLibrary(tracks) {

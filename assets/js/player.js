@@ -1,6 +1,13 @@
 const POS_KEY = (id) => `pos:${id}`;
 const RESUME_THRESHOLD_SEC = 5;
 
+// Read tracks.json straight from raw.githubusercontent.com so the library
+// reflects the current main branch immediately — no need to wait for a Pages
+// rebuild after an upload (~30-60s). raw.githubusercontent.com sends permissive
+// CORS headers; the ?_=timestamp param sidesteps Fastly's 5-min edge cache.
+const TRACKS_RAW_URL = 'https://raw.githubusercontent.com/luqmansen/notebooklm-dump/main/tracks.json';
+const TRACKS_FALLBACK_URL = 'tracks.json'; // Pages-served, in case raw is unreachable
+
 const $tracks  = document.getElementById('tracks');
 const $audio   = document.getElementById('player');
 const $np      = document.getElementById('now-playing');
@@ -21,12 +28,16 @@ function fmt(t) {
 }
 
 async function loadCatalog() {
-  try {
-    const res = await fetch(`tracks.json?_=${Date.now()}`, { cache: 'no-store' });
-    catalog = await res.json();
-  } catch (e) {
-    console.error('Failed to load tracks.json', e);
-    catalog = [];
+  catalog = [];
+  for (const url of [TRACKS_RAW_URL, TRACKS_FALLBACK_URL]) {
+    try {
+      const res = await fetch(`${url}?_=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${res.status}`);
+      catalog = await res.json();
+      break;
+    } catch (e) {
+      console.warn(`tracks.json fetch failed from ${url}:`, e);
+    }
   }
   renderList();
   cleanupStalePositions();
