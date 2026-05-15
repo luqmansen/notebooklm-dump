@@ -251,13 +251,12 @@ $clearBtn.addEventListener('click', () => {
 });
 
 // ---------- ffmpeg.wasm: lazy load, serialized transcodes ----------
-// Uses the UMD distribution of @ffmpeg/ffmpeg loaded via <script> in upload.html.
-// The UMD build uses a classic (non-module) Worker for its internal worker.js,
-// which is what makes cross-origin loading from jsdelivr work. The ESM build
-// forces a module worker which can't be spawned cross-origin.
-//
-// We do NOT use @ffmpeg/util — its UMD build is broken (CJS without bundling).
-// The only function we need is fetchFile, inlined below.
+// Inlined utilities (we don't use @ffmpeg/util — its UMD build is broken CJS):
+//  - fetchFile: read a File/Blob/URL into a Uint8Array
+//  - toBlobURL: fetch a remote script/wasm and wrap it in a same-origin Blob
+//    URL so cross-origin Worker construction inside ffmpeg-core-mt's threading
+//    code works. (Browsers refuse `new Worker(crossOriginUrl)` even with CORS.)
+
 async function fetchFile(input) {
   if (input instanceof Uint8Array) return input;
   if (input instanceof File || input instanceof Blob) {
@@ -271,28 +270,52 @@ async function fetchFile(input) {
   throw new Error('fetchFile: unsupported input type');
 }
 
+async function toBlobURL(url, mimeType) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`toBlobURL fetch ${url}: ${res.status}`);
+  const buf = await res.arrayBuffer();
+  return URL.createObjectURL(new Blob([buf], { type: mimeType }));
+}
+
 let ffmpegInstancePromise = null;
 let transcodeLock = Promise.resolve();
 
 async function getFFmpeg() {
   if (ffmpegInstancePromise) return ffmpegInstancePromise;
   ffmpegInstancePromise = (async () => {
-    if (!window.FFmpegWASM) {
-      throw new Error('ffmpeg.wasm UMD not loaded — check the <script> tag in upload.html');
+    try {
+      if (!window.FFmpegWASM) {
+        throw new Error('ffmpeg.wasm UMD not loaded — check the <script> tag in upload.html');
+      }
+      if (!window.crossOriginIsolated) {
+        throw new Error(
+          'crossOriginIsolated is false — multi-threaded ffmpeg needs SharedArrayBuffer. ' +
+          'The COI service worker may not be active. Clear site data and hard-refresh.'
+        );
+      }
+      const { FFmpeg } = window.FFmpegWASM;
+      const ffmpeg = new FFmpeg();
+
+      // Pre-wrap all three remote assets in same-origin Blob URLs. ffmpeg-core-mt
+      // spawns threading workers from `workerURL` *inside its own worker* — our
+      // Worker constructor patch in upload.html only wraps the main-thread
+      // Worker, so we have to make these URLs same-origin up front.
+      const mtBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-mt@0.12.10/dist/umd';
+      console.log('ffmpeg.wasm: fetching core-mt assets…');
+      const [coreURL, wasmURL, workerURL] = await Promise.all([
+        toBlobURL(`${mtBase}/ffmpeg-core.js`,         'text/javascript'),
+        toBlobURL(`${mtBase}/ffmpeg-core.wasm`,       'application/wasm'),
+        toBlobURL(`${mtBase}/ffmpeg-core.worker.js`,  'text/javascript'),
+      ]);
+      console.log('ffmpeg.wasm: loading core…');
+      await ffmpeg.load({ coreURL, wasmURL, workerURL });
+      console.log('ffmpeg.wasm: ready');
+      return { ffmpeg, fetchFile };
+    } catch (e) {
+      // Allow retry on the next pipeline invocation.
+      ffmpegInstancePromise = null;
+      throw e;
     }
-    const { FFmpeg } = window.FFmpegWASM;
-    const ffmpeg = new FFmpeg();
-    // Multi-threaded core (@ffmpeg/core-mt). Requires SharedArrayBuffer, which
-    // requires COOP/COEP — handled by assets/js/coi-serviceworker.js.
-    // Falls back to single-threaded if SAB is unavailable (we still try anyway;
-    // ffmpeg.wasm will error and the user gets a clear message).
-    const mtBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-mt@0.12.10/dist/umd';
-    await ffmpeg.load({
-      coreURL:   `${mtBase}/ffmpeg-core.js`,
-      wasmURL:   `${mtBase}/ffmpeg-core.wasm`,
-      workerURL: `${mtBase}/ffmpeg-core.worker.js`,
-    });
-    return { ffmpeg, fetchFile };
   })();
   return ffmpegInstancePromise;
 }
