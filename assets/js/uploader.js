@@ -251,21 +251,36 @@ $clearBtn.addEventListener('click', () => {
 });
 
 // ---------- ffmpeg.wasm: lazy load, serialized transcodes ----------
-// Uses the UMD distribution loaded via <script> in upload.html. The UMD build
-// uses a classic (non-module) Worker for its internal worker.js, which is what
-// makes cross-origin loading from jsdelivr work. The ESM build forces a module
-// worker which can't be spawned from a cross-origin Blob URL.
+// Uses the UMD distribution of @ffmpeg/ffmpeg loaded via <script> in upload.html.
+// The UMD build uses a classic (non-module) Worker for its internal worker.js,
+// which is what makes cross-origin loading from jsdelivr work. The ESM build
+// forces a module worker which can't be spawned cross-origin.
+//
+// We do NOT use @ffmpeg/util — its UMD build is broken (CJS without bundling).
+// The only function we need is fetchFile, inlined below.
+async function fetchFile(input) {
+  if (input instanceof Uint8Array) return input;
+  if (input instanceof File || input instanceof Blob) {
+    return new Uint8Array(await input.arrayBuffer());
+  }
+  if (typeof input === 'string') {
+    const r = await fetch(input);
+    if (!r.ok) throw new Error(`fetchFile ${r.status}`);
+    return new Uint8Array(await r.arrayBuffer());
+  }
+  throw new Error('fetchFile: unsupported input type');
+}
+
 let ffmpegInstancePromise = null;
 let transcodeLock = Promise.resolve();
 
 async function getFFmpeg() {
   if (ffmpegInstancePromise) return ffmpegInstancePromise;
   ffmpegInstancePromise = (async () => {
-    if (!window.FFmpegWASM || !window.FFmpegUtil) {
-      throw new Error('ffmpeg.wasm UMD scripts not loaded — check the <script> tags in upload.html');
+    if (!window.FFmpegWASM) {
+      throw new Error('ffmpeg.wasm UMD not loaded — check the <script> tag in upload.html');
     }
     const { FFmpeg } = window.FFmpegWASM;
-    const { fetchFile } = window.FFmpegUtil;
     const ffmpeg = new FFmpeg();
     await ffmpeg.load({
       coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js',

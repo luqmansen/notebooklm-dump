@@ -206,10 +206,11 @@
   </section>
 </div>
 
-<!-- ffmpeg.wasm UMD: 4.4 KB orchestrator. The actual core (~30 MB WASM) lazy-loads
-     on first call to ffmpeg.load() — only when a file >100 MB is queued. -->
+<!-- ffmpeg.wasm UMD orchestrator (4.4 KB). The core (~30 MB WASM) lazy-loads on
+     first call to ffmpeg.load() — only when a file >100 MB is queued.
+     We don't load @ffmpeg/util — its UMD build is broken (raw CJS exports). The
+     only function we'd use (fetchFile) is inlined in uploader.js. -->
 <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js" crossorigin="anonymous"></script>
 <script type="module" src="assets/js/uploader.js"></script>
 </body>
 </html>
