@@ -138,6 +138,52 @@
     text-align: center;
   }
 
+  /* Library list — similar to queue but no progress/size, with delete button */
+  .library-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    margin-bottom: 0.5rem;
+  }
+  .library-title-input {
+    flex: 1;
+    margin: 0;
+    padding: 0.4rem 0.6rem;
+    background: var(--card);
+    font-size: 0.9rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--text);
+    font-family: inherit;
+  }
+  .library-title-input:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+  .library-status {
+    font-size: 0.75rem;
+    font-family: ui-monospace, monospace;
+    min-width: 56px;
+    text-align: right;
+    color: var(--muted);
+  }
+  .library-status.ok { color: var(--ok); }
+  .library-status.err { color: var(--danger); }
+  .library-delete {
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    padding: 0.3rem 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .library-delete:hover:not(:disabled) { color: var(--danger); }
+
   .status {
     font-family: ui-monospace, monospace;
     font-size: 0.85rem;
@@ -188,6 +234,17 @@
       Token scope: <code>Contents: Read and write</code> on this repo only. Stored locally in your browser. Use the "Log out" button to clear it.
     </p>
     <div id="auth-status" class="status"></div>
+  </section>
+
+  <!-- Unlocked: existing library -->
+  <section id="library-card" class="card hidden">
+    <div class="row" style="justify-content: space-between; margin-bottom: 0.85rem;">
+      <h2 style="margin:0; font-size:1rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted);">Library</h2>
+      <button id="library-refresh-btn" class="ghost" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">Refresh</button>
+    </div>
+    <div id="library" class="library">
+      <div class="queue-empty">Loading…</div>
+    </div>
   </section>
 
   <!-- Unlocked: bulk upload -->

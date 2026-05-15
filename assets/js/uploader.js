@@ -32,6 +32,10 @@ const $resetSwBtn   = document.getElementById('reset-sw-btn');
 const $logoutBtn    = document.getElementById('logout-btn');
 const $uploadStatus = document.getElementById('upload-status');
 
+const $libraryCard       = document.getElementById('library-card');
+const $library           = document.getElementById('library');
+const $libraryRefreshBtn = document.getElementById('library-refresh-btn');
+
 // ---------- helpers ----------
 function setStatus(el, msg, kind) {
   const cls = kind ? ` class="${kind}"` : '';
@@ -79,10 +83,13 @@ async function validatePat(token) {
 function showUnlocked() {
   $authCard.classList.add('hidden');
   $uploadCard.classList.remove('hidden');
+  $libraryCard.classList.remove('hidden');
+  loadLibrary().catch(err => console.error('library load failed', err));
 }
 function showLocked() {
   $authCard.classList.remove('hidden');
   $uploadCard.classList.add('hidden');
+  $libraryCard.classList.add('hidden');
   $patInput.value = '';
   setStatus($authStatus, '');
   setStatus($uploadStatus, '');
@@ -140,6 +147,147 @@ $resetSwBtn.addEventListener('click', async () => {
   } finally {
     location.reload();
   }
+});
+
+// ---------- library (existing tracks.json) ----------
+async function loadLibrary() {
+  $library.innerHTML = '<div class="queue-empty">Loading…</div>';
+  // Bypass HTTP cache so we get the live tracks.json after any change.
+  const res = await fetch(`tracks.json?_=${Date.now()}`, { cache: 'no-store' });
+  if (!res.ok) {
+    $library.innerHTML = `<div class="queue-empty">Failed to load tracks.json (${res.status})</div>`;
+    return;
+  }
+  const tracks = await res.json();
+  renderLibrary(tracks);
+}
+
+function renderLibrary(tracks) {
+  $library.innerHTML = '';
+  if (!tracks.length) {
+    $library.innerHTML = '<div class="queue-empty">No tracks yet. Upload some below.</div>';
+    return;
+  }
+
+  for (const t of tracks) {
+    const row = document.createElement('div');
+    row.className = 'library-item';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'library-title-input';
+    input.value = t.title;
+    input.dataset.original = t.title;
+
+    const status = document.createElement('span');
+    status.className = 'library-status';
+    status.textContent = '';
+
+    const del = document.createElement('button');
+    del.className = 'library-delete';
+    del.textContent = '×';
+    del.title = 'Remove from library (release stays on GitHub)';
+
+    const commit = async () => {
+      const newTitle = input.value.trim();
+      if (!newTitle) {
+        input.value = input.dataset.original;
+        return;
+      }
+      if (newTitle === input.dataset.original) return;
+      try {
+        status.textContent = 'saving…';
+        status.className = 'library-status';
+        input.disabled = true;
+        await updateLibrary(list => {
+          const idx = list.findIndex(x => x.id === t.id);
+          if (idx === -1) throw new Error('track not in tracks.json');
+          list[idx].title = newTitle;
+          return { list, msg: `library: rename ${t.id}` };
+        });
+        input.dataset.original = newTitle;
+        t.title = newTitle;
+        status.textContent = 'saved';
+        status.className = 'library-status ok';
+        setTimeout(() => { status.textContent = ''; }, 2000);
+      } catch (e) {
+        console.error('rename failed', e);
+        status.textContent = 'err';
+        status.className = 'library-status err';
+        input.value = input.dataset.original; // revert
+      } finally {
+        input.disabled = false;
+      }
+    };
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { input.value = input.dataset.original; input.blur(); }
+    });
+
+    del.addEventListener('click', async () => {
+      if (!confirm(`Remove "${t.title}" from the library?\n\nThe release on GitHub stays — only the entry in tracks.json is removed. You can re-add it manually if needed.`)) return;
+      try {
+        status.textContent = 'deleting…';
+        del.disabled = true;
+        await updateLibrary(list => ({
+          list: list.filter(x => x.id !== t.id),
+          msg: `library: remove ${t.id}`,
+        }));
+        row.remove();
+      } catch (e) {
+        console.error('delete failed', e);
+        status.textContent = 'err';
+        status.className = 'library-status err';
+        del.disabled = false;
+      }
+    });
+
+    row.append(input, status, del);
+    $library.appendChild(row);
+  }
+}
+
+// SHA-aware tracks.json update. Caller passes a mutator function that gets the
+// parsed list and returns { list, msg } for the commit message. One retry on 409.
+async function updateLibrary(mutator) {
+  const token = localStorage.getItem(PAT_KEY);
+  if (!token) throw new Error('not authenticated');
+  const path = `repos/${OWNER}/${REPO}/contents/tracks.json`;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const getRes = await fetch(`https://api.github.com/${path}`, { headers: ghHeaders(token) });
+    if (!getRes.ok) throw new Error(`get tracks.json ${getRes.status}`);
+    const meta = await getRes.json();
+    let list;
+    try {
+      list = JSON.parse(atob(meta.content.replace(/\n/g, '')));
+      if (!Array.isArray(list)) list = [];
+    } catch { list = []; }
+
+    const { list: newList, msg } = mutator(list);
+
+    const putRes = await fetch(`https://api.github.com/${path}`, {
+      method: 'PUT',
+      headers: ghHeaders(token, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        message: msg,
+        content: base64FromString(JSON.stringify(newList, null, 2) + '\n'),
+        sha: meta.sha,
+      }),
+    });
+    if (putRes.ok) return;
+    if (putRes.status === 409 && attempt < 2) {
+      await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
+      continue;
+    }
+    throw new Error(`put tracks.json ${putRes.status}: ${await putRes.text()}`);
+  }
+}
+
+$libraryRefreshBtn.addEventListener('click', () => {
+  loadLibrary().catch(err => console.error('library reload failed', err));
 });
 
 // ---------- queue model ----------
@@ -513,41 +661,13 @@ function uploadAsset(release, file, token, onProgress) {
 
 async function batchAppendTracks(token, entries) {
   if (entries.length === 0) return;
-  const path = `repos/${OWNER}/${REPO}/contents/tracks.json`;
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const getRes = await fetch(`https://api.github.com/${path}`, { headers: ghHeaders(token) });
-    if (!getRes.ok) throw new Error(`get tracks.json ${getRes.status}`);
-    const meta = await getRes.json();
-    let list;
-    try {
-      list = JSON.parse(atob(meta.content.replace(/\n/g, '')));
-      if (!Array.isArray(list)) list = [];
-    } catch {
-      list = [];
-    }
+  const msg = entries.length === 1
+    ? `library: add ${entries[0].id}`
+    : `library: add ${entries.length} tracks`;
+  await updateLibrary(list => {
     list.push(...entries);
-
-    const msg = entries.length === 1
-      ? `library: add ${entries[0].id}`
-      : `library: add ${entries.length} tracks`;
-
-    const putRes = await fetch(`https://api.github.com/${path}`, {
-      method: 'PUT',
-      headers: ghHeaders(token, { 'Content-Type': 'application/json' }),
-      body: JSON.stringify({
-        message: msg,
-        content: base64FromString(JSON.stringify(list, null, 2) + '\n'),
-        sha: meta.sha,
-      }),
-    });
-    if (putRes.ok) return;
-    if (putRes.status === 409 && attempt < 2) {
-      await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
-      continue;
-    }
-    throw new Error(`put tracks.json ${putRes.status}: ${await putRes.text()}`);
-  }
+    return { list, msg };
+  });
 }
 
 // ---------- per-file pipeline ----------
@@ -642,6 +762,7 @@ $uploadBtn.addEventListener('click', async () => {
     if (okEntries.length > 0) {
       setStatus($uploadStatus, 'Uploads done. Updating library index...');
       await batchAppendTracks(token, okEntries);
+      loadLibrary().catch(err => console.error('library reload failed', err));
     }
 
     const summary = `Done. ${okEntries.length} succeeded, ${failed.length} failed.` +
