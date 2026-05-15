@@ -63,5 +63,30 @@
     "id": "track-mp7gf3ug-h59",
     "title": "Mathematical Guarantees For AI Vector Search",
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-h59/Mathematical_Guarantees_for_AI_Vector_Search.m4a"
+  },
+  {
+    "id": "track-mp7h93ub-a6z",
+    "title": "How ZooKeeper Replaced Blocking Distributed Locks",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-a6z/How_ZooKeeper_Replaced_Blocking_Distributed_Locks.m4a"
+  },
+  {
+    "id": "track-mp7h93ub-v96",
+    "title": "Datafusion Paper",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-v96/The_Death_of_the_Monolithic_Database.m4a"
+  },
+  {
+    "id": "track-mp7h93ub-dqx",
+    "title": "How Apache Flink Unified Data Processing",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-dqx/How_Apache_Flink_unified_data_processing.m4a"
+  },
+  {
+    "id": "track-mp7h93ub-at7",
+    "title": "How Google File System Embraces Failure",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-at7/How_Google_File_System_embraces_failure.m4a"
+  },
+  {
+    "id": "track-mp7h93ub-c7j",
+    "title": "How Google Chubby Lock Service Works",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-c7j/How_Google_s_Chubby_lock_service_works.m4a"
   }
 ]
