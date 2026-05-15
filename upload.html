@@ -15,6 +15,7 @@
     --border: #2e2e2e;
     --danger: #e63946;
     --ok: #4ade80;
+    --warn: #facc15;
   }
   * { box-sizing: border-box; }
   body {
@@ -27,7 +28,7 @@
     justify-content: center;
     padding: 2rem 1rem;
   }
-  .app { width: 100%; max-width: 560px; }
+  .app { width: 100%; max-width: 720px; }
   header { margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
   header h1 { font-size: 1.4rem; margin: 0; font-weight: 600; }
   header a { color: var(--muted); font-size: 0.85rem; text-decoration: none; }
@@ -75,7 +76,68 @@
     font-weight: 400;
   }
   .row { display: flex; gap: 0.5rem; align-items: center; }
-  .row button { flex: 0 0 auto; }
+
+  .queue { margin-top: 0.5rem; }
+  .queue-item {
+    background: var(--card-2);
+    border-radius: 8px;
+    padding: 0.75rem 0.9rem;
+    margin-bottom: 0.6rem;
+    border: 1px solid var(--border);
+  }
+  .queue-item-top {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.4rem;
+  }
+  .queue-title-input {
+    flex: 1;
+    margin: 0;
+    padding: 0.4rem 0.6rem;
+    background: var(--card);
+    font-size: 0.9rem;
+  }
+  .queue-remove {
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    padding: 0.4rem;
+    font-size: 1rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .queue-remove:hover:not(:disabled) { color: var(--danger); }
+  .queue-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: ui-monospace, monospace;
+    margin-bottom: 0.4rem;
+  }
+  .queue-status.ok   { color: var(--ok); }
+  .queue-status.err  { color: var(--danger); }
+  .queue-status.warn { color: var(--warn); }
+  .progress {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.15s;
+  }
+  .queue-empty {
+    padding: 1rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
   .status {
     font-family: ui-monospace, monospace;
     font-size: 0.85rem;
@@ -85,19 +147,8 @@
   }
   .status .ok { color: var(--ok); }
   .status .err { color: var(--danger); }
-  .progress {
-    height: 6px;
-    background: var(--card-2);
-    border-radius: 3px;
-    margin-top: 0.5rem;
-    overflow: hidden;
-  }
-  .progress-bar {
-    height: 100%;
-    background: var(--accent);
-    width: 0%;
-    transition: width 0.15s;
-  }
+  .status .warn { color: var(--warn); }
+
   .help {
     font-size: 0.8rem;
     color: var(--muted);
@@ -132,22 +183,25 @@
     <div id="auth-status" class="status"></div>
   </section>
 
-  <!-- Unlocked: upload form -->
+  <!-- Unlocked: bulk upload -->
   <section id="upload-card" class="card hidden">
-    <label for="file">Audio file (M4A, MP4, MP3)</label>
-    <input id="file" type="file" accept="audio/*,.m4a,.mp4,.mp3">
+    <label for="file">Audio files <span style="color:var(--muted);font-weight:400;">— pick multiple, titles auto-fill from filenames</span></label>
+    <input id="file" type="file" multiple accept="audio/*,.m4a,.mp4,.mp3">
 
-    <label for="title">Title <span style="color:var(--muted);font-weight:400;">— auto-filled from filename, edit as needed</span></label>
-    <input id="title" type="text" placeholder="e.g. How MapReduce Tamed Massive Data Clusters">
+    <div id="queue" class="queue">
+      <div class="queue-empty">No files queued. Pick files above to start.</div>
+    </div>
 
     <div class="row" style="margin-top: 0.5rem;">
-      <button id="upload-btn">Upload &amp; Publish</button>
-      <button id="logout-btn" class="ghost">Log out</button>
+      <button id="upload-btn" disabled>Upload All</button>
+      <button id="clear-btn" class="ghost" disabled>Clear queue</button>
+      <button id="logout-btn" class="ghost" style="margin-left: auto;">Log out</button>
     </div>
 
-    <div class="progress hidden" id="progress-wrap">
-      <div class="progress-bar" id="progress-bar"></div>
-    </div>
+    <p class="help" style="margin-top: 0.9rem;">
+      Files over 100 MB are re-encoded to AAC in your browser (one at a time) so they fit under Cloudflare Workers' 100 MB request cap. Re-encoding runs ~5–15× faster than realtime and downloads ~30 MB of WebAssembly the first time.
+    </p>
+
     <div id="upload-status" class="status"></div>
   </section>
 </div>
