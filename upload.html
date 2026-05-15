@@ -206,6 +206,37 @@
   </section>
 </div>
 
+<!-- Patch Worker constructor before ffmpeg.wasm loads. ffmpeg's UMD bundle
+     references its worker chunk via a cross-origin jsdelivr URL, but browsers
+     refuse to construct a Worker from a cross-origin script (CORS headers do
+     not help — Worker constructor enforces same-origin strictly). The standard
+     workaround is to wrap the real URL in a same-origin Blob that just calls
+     importScripts() to load it. Inside a worker, importScripts() *does* honor
+     CORS, so cross-origin scripts load fine from there. -->
+<script>
+(function () {
+  const OrigWorker = window.Worker;
+  class WrappedWorker extends OrigWorker {
+    constructor(url, options) {
+      let target = url;
+      try {
+        const urlStr = url instanceof URL ? url.href : String(url);
+        const urlObj = new URL(urlStr, location.href);
+        const isModule = options && options.type === 'module';
+        if (!isModule && urlObj.origin !== location.origin) {
+          const stub = `importScripts(${JSON.stringify(urlObj.href)});`;
+          target = URL.createObjectURL(
+            new Blob([stub], { type: 'application/javascript' })
+          );
+        }
+      } catch (_) { /* fall through to original */ }
+      super(target, options);
+    }
+  }
+  window.Worker = WrappedWorker;
+})();
+</script>
+
 <!-- ffmpeg.wasm UMD orchestrator (4.4 KB). The core (~30 MB WASM) lazy-loads on
      first call to ffmpeg.load() — only when a file >100 MB is queued.
      We don't load @ffmpeg/util — its UMD build is broken (raw CJS exports). The
