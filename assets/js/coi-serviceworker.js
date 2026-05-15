@@ -6,18 +6,30 @@
 // service worker that intercepts fetches and rewrites the headers on the way
 // back to the page. Same-origin idea, no infra needed beyond this file.
 //
-// Adapted from https://github.com/gzuidhof/coi-serviceworker (MIT).
+// Adapted from https://github.com/gzuidhof/coi-serviceworker (MIT), with two
+// safety changes to prevent infinite-reload loops:
+//   1. No `updatefound → reload` handler. (Periodic SW update checks see the
+//      response as "changed" once the SW adds COOP/COEP to its own script,
+//      which used to trigger an endless reload cycle.)
+//   2. A sessionStorage guard so we only attempt one reload per session. If
+//      we reload and the page still isn't crossOriginIsolated, we bail with
+//      a console warning instead of looping.
 
 (function () {
-  // Inside the service worker
+  // ----- service worker context -----
   if (typeof window === 'undefined') {
-    self.addEventListener('install', () => self.skipWaiting());
+    self.addEventListener('install',  () => self.skipWaiting());
     self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 
     self.addEventListener('fetch', (e) => {
       const req = e.request;
-      // Skip cache-only requests and requests from non-page contexts that don't need COOP/COEP
+
       if (req.cache === 'only-if-cached' && req.mode !== 'same-origin') return;
+
+      // Don't rewrite the SW script itself — keeps `updatefound` from firing
+      // on every periodic update check.
+      const url = new URL(req.url);
+      if (url.pathname.endsWith('/coi-serviceworker.js')) return;
 
       e.respondWith(
         fetch(req)
@@ -38,29 +50,45 @@
     return;
   }
 
-  // Inside the page
-  if (!('serviceWorker' in navigator)) {
-    console.warn('coi-sw: serviceWorker not supported; multi-threaded WASM disabled');
-    return;
-  }
+  // ----- page context -----
+  const RELOAD_KEY = 'coi-sw-reload-attempted';
+
   if (window.crossOriginIsolated) {
-    // Already isolated; SW not needed (page already has the headers somehow)
+    sessionStorage.removeItem(RELOAD_KEY);
     return;
   }
-  const swSrc = document.currentScript.src;
-  navigator.serviceWorker.register(swSrc).then((reg) => {
-    reg.addEventListener('updatefound', () => location.reload());
-    if (reg.active && !navigator.serviceWorker.controller) {
-      // Existing SW but not controlling this page yet — reload once
+  if (!('serviceWorker' in navigator)) {
+    console.warn('coi-sw: serviceWorker not supported — multi-threaded WASM disabled');
+    return;
+  }
+  if (sessionStorage.getItem(RELOAD_KEY)) {
+    console.warn(
+      'coi-sw: already reloaded once and crossOriginIsolated still false. ' +
+      'Not reloading again to avoid a loop. Multi-threaded WASM will not be available.'
+    );
+    return;
+  }
+
+  navigator.serviceWorker.register(document.currentScript.src).then((reg) => {
+    const reloadOnce = () => {
+      sessionStorage.setItem(RELOAD_KEY, '1');
       location.reload();
-    } else if (!reg.active && !navigator.serviceWorker.controller) {
-      // First-time install — wait for activation, then reload
-      const newWorker = reg.installing || reg.waiting;
-      if (newWorker) {
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'activated') location.reload();
+    };
+
+    if (reg.active && !navigator.serviceWorker.controller) {
+      // Existing SW but not yet controlling this page: one reload puts it in charge.
+      reloadOnce();
+      return;
+    }
+
+    if (!reg.active) {
+      // First-time install: reload when the new SW activates.
+      const sw = reg.installing || reg.waiting;
+      if (sw) {
+        sw.addEventListener('statechange', () => {
+          if (sw.state === 'activated') reloadOnce();
         });
       }
     }
-  }).catch((err) => console.error('coi-sw register failed', err));
+  }).catch((err) => console.error('coi-sw register failed:', err));
 })();
