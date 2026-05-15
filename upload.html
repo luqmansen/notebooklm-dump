@@ -172,11 +172,18 @@
 
   <!-- Locked: no PAT in storage -->
   <section id="auth-card" class="card">
-    <label for="pat">Fine-grained personal access token</label>
-    <input id="pat" type="password" placeholder="github_pat_..." autocomplete="off">
-    <div class="row">
-      <button id="auth-btn">Unlock</button>
-    </div>
+    <form id="auth-form" autocomplete="on">
+      <!-- Hidden username gives Chrome's password manager something to associate
+           the PAT with, so it'll offer to save/autofill on subsequent logins. -->
+      <input type="text" name="username" value="luqmansen@notebooklm-dump"
+             autocomplete="username" style="display:none" readonly>
+      <label for="pat">Fine-grained personal access token</label>
+      <input id="pat" type="password" name="password" autocomplete="current-password"
+             placeholder="github_pat_...">
+      <div class="row">
+        <button id="auth-btn" type="submit">Unlock</button>
+      </div>
+    </form>
     <p class="help" style="margin-top: 1rem;">
       Token scope: <code>Contents: Read and write</code> on this repo only. Stored locally in your browser. Use the "Log out" button to clear it.
     </p>
@@ -195,6 +202,7 @@
     <div class="row" style="margin-top: 0.5rem;">
       <button id="upload-btn" disabled>Upload All</button>
       <button id="clear-btn" class="ghost" disabled>Clear queue</button>
+      <button id="reset-sw-btn" class="ghost" title="Unregister service worker + clear ffmpeg.wasm cache and reload. Use if uploads start failing with 'crossOriginIsolated is false'.">Reset SW</button>
       <button id="logout-btn" class="ghost" style="margin-left: auto;">Log out</button>
     </div>
 

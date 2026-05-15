@@ -62,7 +62,7 @@
   // is per-tab and per-tab-restore, so a stale flag from a broken session could
   // otherwise lock the user out of all retry attempts.
   const RELOAD_KEY = 'coi-sw-last-reload';
-  const COOLDOWN_MS = 30 * 1000;
+  const COOLDOWN_MS = 5 * 1000; // short cooldown — long enough to prevent loops, short enough to allow quick retry
 
   if (window.crossOriginIsolated) {
     sessionStorage.removeItem(RELOAD_KEY);
@@ -93,20 +93,24 @@
         location.reload();
       };
 
-      // Reload as soon as a service worker actually takes control of this page.
-      // Listening for `controllerchange` is more reliable than `statechange ==
-      // 'activated'`, which can fire before clients.claim() finishes.
+      // If the SW is already controlling this page but we're still not isolated,
+      // the page was likely loaded BEFORE the SW activated (race) or restored from
+      // bfcache. Reload — the SW will now intercept and add the headers.
       if (navigator.serviceWorker.controller) {
-        // Already controlled but not isolated — re-registering won't help.
-        // Either the SW isn't adding headers, or something is violating COEP.
-        console.warn(
-          'coi-sw: page is already controlled but crossOriginIsolated is false. ' +
-          'Check the SW console (DevTools → Application → Service Workers) and ' +
-          'Network tab for the upload.html response headers.'
-        );
+        reloadOnce();
         return;
       }
       navigator.serviceWorker.addEventListener('controllerchange', reloadOnce, { once: true });
     })
     .catch((err) => console.error('coi-sw register failed:', err));
+
+  // Handle back-forward cache restores. If the user navigates away (e.g. to
+  // index.html) and back, the browser may restore upload.html from bfcache in
+  // its previous non-isolated state. Reload when that happens.
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted && !window.crossOriginIsolated) {
+      console.log('coi-sw: bfcache restore detected, reloading for COI');
+      location.reload();
+    }
+  });
 })();

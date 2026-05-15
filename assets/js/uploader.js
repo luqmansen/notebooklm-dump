@@ -18,16 +18,18 @@ const CONCURRENCY = 3; // parallel upload pipelines (transcode is always serial)
 
 // ---------- DOM ----------
 const $authCard   = document.getElementById('auth-card');
+const $authForm   = document.getElementById('auth-form');
 const $uploadCard = document.getElementById('upload-card');
 const $patInput   = document.getElementById('pat');
 const $authBtn    = document.getElementById('auth-btn');
 const $authStatus = document.getElementById('auth-status');
 
-const $file        = document.getElementById('file');
-const $queue       = document.getElementById('queue');
-const $uploadBtn   = document.getElementById('upload-btn');
-const $clearBtn    = document.getElementById('clear-btn');
-const $logoutBtn   = document.getElementById('logout-btn');
+const $file         = document.getElementById('file');
+const $queue        = document.getElementById('queue');
+const $uploadBtn    = document.getElementById('upload-btn');
+const $clearBtn     = document.getElementById('clear-btn');
+const $resetSwBtn   = document.getElementById('reset-sw-btn');
+const $logoutBtn    = document.getElementById('logout-btn');
 const $uploadStatus = document.getElementById('upload-status');
 
 // ---------- helpers ----------
@@ -87,7 +89,11 @@ function showLocked() {
   resetQueue();
 }
 
-$authBtn.addEventListener('click', async () => {
+// Submit (not click) so Chrome's password manager sees the form submission and
+// offers to save the PAT. The hidden username field in upload.html gives it
+// something to associate the password with.
+$authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
   const token = $patInput.value.trim();
   if (!token) return setStatus($authStatus, 'Paste a token first.', 'err');
   $authBtn.disabled = true;
@@ -97,8 +103,8 @@ $authBtn.addEventListener('click', async () => {
     localStorage.setItem(PAT_KEY, token);
     setStatus($authStatus, `Authenticated as ${user}.`, 'ok');
     setTimeout(showUnlocked, 400);
-  } catch (e) {
-    setStatus($authStatus, e.message, 'err');
+  } catch (err) {
+    setStatus($authStatus, err.message, 'err');
   } finally {
     $authBtn.disabled = false;
   }
@@ -107,6 +113,33 @@ $authBtn.addEventListener('click', async () => {
 $logoutBtn.addEventListener('click', () => {
   localStorage.removeItem(PAT_KEY);
   showLocked();
+});
+
+$resetSwBtn.addEventListener('click', async () => {
+  if (!confirm(
+    'Reset will:\n' +
+    '  • Unregister the COI service worker\n' +
+    '  • Clear the ffmpeg.wasm cache (~30 MB, will re-download on next transcode)\n' +
+    '  • Reload the page\n\n' +
+    'Use this if uploads start failing with "crossOriginIsolated is false". ' +
+    'Your PAT stays in localStorage.\n\nContinue?'
+  )) return;
+
+  $resetSwBtn.disabled = true;
+  $resetSwBtn.textContent = 'Resetting…';
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if ('caches' in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map(n => caches.delete(n)));
+    }
+    sessionStorage.clear();
+  } finally {
+    location.reload();
+  }
 });
 
 // ---------- queue model ----------
@@ -270,10 +303,28 @@ async function fetchFile(input) {
   throw new Error('fetchFile: unsupported input type');
 }
 
+// Cache fetched ffmpeg assets in Cache Storage so subsequent loads don't re-download
+// 30 MB. Cache Storage is unaffected by DevTools "Disable cache" and persists across
+// hard refreshes. Bump CACHE_NAME if @ffmpeg/core-mt version changes.
+const FFMPEG_CACHE_NAME = 'ffmpeg-core-mt-0.12.10';
+
 async function toBlobURL(url, mimeType) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`toBlobURL fetch ${url}: ${res.status}`);
-  const buf = await res.arrayBuffer();
+  let cache = null;
+  try { cache = await caches.open(FFMPEG_CACHE_NAME); } catch (_) { /* private mode, etc. */ }
+
+  let response = cache ? await cache.match(url) : null;
+  let fromCache = !!response;
+
+  if (!response) {
+    response = await fetch(url);
+    if (cache && response.ok) {
+      cache.put(url, response.clone()).catch(() => {});
+    }
+  }
+  if (!response.ok) throw new Error(`toBlobURL fetch ${url}: ${response.status}`);
+
+  const buf = await response.arrayBuffer();
+  console.log(`toBlobURL: ${fromCache ? 'cache hit' : 'network'} ${url.replace(/.*\//, '')} (${(buf.byteLength/1024/1024).toFixed(1)} MB)`);
   return URL.createObjectURL(new Blob([buf], { type: mimeType }));
 }
 
@@ -373,8 +424,7 @@ async function transcodeForUpload(item) {
       await ffmpeg.exec([
         '-i', inName,
         '-vn',                        // drop any video track
-        '-ac', '1',                   // mono — voice doesn't need stereo
-        '-ar', '22050',               // 22 kHz — twice the highest speech frequency, halves encode work
+        '-ac', '1',                   // mono — NotebookLM voices are center-panned
         '-c:a', 'aac',
         '-b:a', `${targetKbps}k`,
         '-movflags', '+faststart',    // playable while streaming
@@ -384,7 +434,7 @@ async function transcodeForUpload(item) {
       ffmpeg.off('progress', progressHandler);
     }
     const elapsedSec = ((Date.now() - startMs) / 1000).toFixed(1);
-    console.log(`ffmpeg.exec: transcoded ${item.file.name} in ${elapsedSec}s (target ${targetKbps}kbps)`);
+    console.log(`ffmpeg.exec: transcoded ${item.file.name} in ${elapsedSec}s (target ${targetKbps}kbps, mono, source sample rate preserved)`);
 
     const data = await ffmpeg.readFile(outName);
     await ffmpeg.deleteFile(inName).catch(() => {});
