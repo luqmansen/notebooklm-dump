@@ -251,16 +251,21 @@ $clearBtn.addEventListener('click', () => {
 });
 
 // ---------- ffmpeg.wasm: lazy load, serialized transcodes ----------
+// Uses the UMD distribution loaded via <script> in upload.html. The UMD build
+// uses a classic (non-module) Worker for its internal worker.js, which is what
+// makes cross-origin loading from jsdelivr work. The ESM build forces a module
+// worker which can't be spawned from a cross-origin Blob URL.
 let ffmpegInstancePromise = null;
 let transcodeLock = Promise.resolve();
 
 async function getFFmpeg() {
   if (ffmpegInstancePromise) return ffmpegInstancePromise;
   ffmpegInstancePromise = (async () => {
-    const [{ FFmpeg }, { fetchFile }] = await Promise.all([
-      import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/+esm'),
-      import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/+esm'),
-    ]);
+    if (!window.FFmpegWASM || !window.FFmpegUtil) {
+      throw new Error('ffmpeg.wasm UMD scripts not loaded — check the <script> tags in upload.html');
+    }
+    const { FFmpeg } = window.FFmpegWASM;
+    const { fetchFile } = window.FFmpegUtil;
     const ffmpeg = new FFmpeg();
     await ffmpeg.load({
       coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js',
