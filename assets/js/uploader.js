@@ -10,8 +10,8 @@ const UPLOAD_PROXY_BASE = 'https://notebooklm-upload.luqmansen.workers.dev/';
 // via ffmpeg.wasm to fit under the limit (with a small safety margin).
 const WORKER_MAX_BYTES = 100 * 1024 * 1024;
 const TRANSCODE_TARGET_BYTES = 95 * 1024 * 1024;   // aim slightly under
-const TRANSCODE_MIN_KBPS = 32;                     // floor for speech
-const TRANSCODE_MAX_KBPS = 96;                     // ceiling — voice doesn't need more
+const TRANSCODE_MIN_KBPS = 24;                     // floor for mono speech
+const TRANSCODE_MAX_KBPS = 64;                     // mono voice — 64 kbps is excellent
 const HARD_MAX_BYTES = 2 * 1024 * 1024 * 1024;     // GitHub release asset hard cap
 
 const CONCURRENCY = 3; // parallel upload pipelines (transcode is always serial)
@@ -282,9 +282,15 @@ async function getFFmpeg() {
     }
     const { FFmpeg } = window.FFmpegWASM;
     const ffmpeg = new FFmpeg();
+    // Multi-threaded core (@ffmpeg/core-mt). Requires SharedArrayBuffer, which
+    // requires COOP/COEP — handled by assets/js/coi-serviceworker.js.
+    // Falls back to single-threaded if SAB is unavailable (we still try anyway;
+    // ffmpeg.wasm will error and the user gets a clear message).
+    const mtBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-mt@0.12.10/dist/umd';
     await ffmpeg.load({
-      coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js',
-      wasmURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm',
+      coreURL:   `${mtBase}/ffmpeg-core.js`,
+      wasmURL:   `${mtBase}/ffmpeg-core.wasm`,
+      workerURL: `${mtBase}/ffmpeg-core.worker.js`,
     });
     return { ffmpeg, fetchFile };
   })();
@@ -338,6 +344,7 @@ async function transcodeForUpload(item) {
       await ffmpeg.exec([
         '-i', inName,
         '-vn',                        // drop any video track
+        '-ac', '1',                   // force mono — voice content doesn't need stereo
         '-c:a', 'aac',
         '-b:a', `${targetKbps}k`,
         '-movflags', '+faststart',    // playable while streaming

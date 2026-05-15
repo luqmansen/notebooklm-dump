@@ -206,6 +206,12 @@
   </section>
 </div>
 
+<!-- COI service worker shim: injects COOP/COEP headers so SharedArrayBuffer
+     works on GitHub Pages, which is the prerequisite for multi-threaded
+     ffmpeg.wasm. On first visit this triggers ONE page reload to take effect;
+     subsequent visits are instant. -->
+<script src="assets/js/coi-serviceworker.js"></script>
+
 <!-- Patch Worker constructor before ffmpeg.wasm loads. ffmpeg's UMD bundle
      references its worker chunk via a cross-origin jsdelivr URL, but browsers
      refuse to construct a Worker from a cross-origin script (CORS headers do
