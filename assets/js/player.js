@@ -1,12 +1,14 @@
 const POS_KEY = (id) => `pos:${id}`;
 const RESUME_THRESHOLD_SEC = 5;
 
-// Read tracks.json straight from raw.githubusercontent.com so the library
-// reflects the current main branch immediately — no need to wait for a Pages
-// rebuild after an upload (~30-60s). raw.githubusercontent.com sends permissive
-// CORS headers; the ?_=timestamp param sidesteps Fastly's 5-min edge cache.
-const TRACKS_RAW_URL = 'https://raw.githubusercontent.com/luqmansen/notebooklm-dump/main/tracks.json';
-const TRACKS_FALLBACK_URL = 'tracks.json'; // Pages-served, in case raw is unreachable
+// Fetch tracks.json via the GitHub Contents API instead of raw.githubusercontent.com.
+// raw.* sits behind Fastly which ignores query-string cache busters (verified empirically) —
+// you can wait up to 5 minutes for an edit to propagate. The Contents API has no
+// Fastly cache, only a 60s client-side max-age which `cache: 'no-store'` defeats.
+// Costs one request from the 60-per-hour-per-IP unauthenticated rate limit; fine for
+// personal use. Falls back to Pages-served tracks.json if rate-limited or offline.
+const TRACKS_CONTENTS_API = 'https://api.github.com/repos/luqmansen/notebooklm-dump/contents/tracks.json';
+const TRACKS_FALLBACK_URL = 'tracks.json'; // Pages-served — older but available offline
 
 const $tracks  = document.getElementById('tracks');
 const $audio   = document.getElementById('player');
@@ -29,16 +31,28 @@ function fmt(t) {
 
 async function loadCatalog() {
   catalog = [];
-  for (const url of [TRACKS_RAW_URL, TRACKS_FALLBACK_URL]) {
+
+  // 1. Try Contents API for fresh data.
+  try {
+    const res = await fetch(TRACKS_CONTENTS_API, {
+      cache: 'no-store',
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json();
+    catalog = JSON.parse(atob(data.content.replace(/\n/g, '')));
+  } catch (e) {
+    console.warn('Contents API failed, falling back to Pages-served tracks.json:', e);
+    // 2. Fall back to the Pages copy.
     try {
-      const res = await fetch(`${url}?_=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(`${TRACKS_FALLBACK_URL}?_=${Date.now()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`${res.status}`);
       catalog = await res.json();
-      break;
-    } catch (e) {
-      console.warn(`tracks.json fetch failed from ${url}:`, e);
+    } catch (e2) {
+      console.error('All tracks.json fetches failed:', e2);
     }
   }
+
   renderList();
   cleanupStalePositions();
 }

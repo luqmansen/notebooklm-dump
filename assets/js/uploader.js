@@ -150,27 +150,26 @@ $resetSwBtn.addEventListener('click', async () => {
 });
 
 // ---------- library (existing tracks.json) ----------
-// Read directly from raw.githubusercontent.com so the library reflects the
-// latest commit on main immediately after a Contents API write — no need to
-// wait for Pages to rebuild (~30–60s). Cache-buster bypasses Fastly's edge cache.
-const TRACKS_RAW_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/tracks.json`;
+// Read via Contents API instead of raw.githubusercontent.com — raw sits behind
+// Fastly which ignores query-string cache-busters (verified), so edits take up
+// to 5 minutes to propagate. The Contents API has no edge cache; with the
+// authenticated PAT we get 5000 req/hr too. Always fresh.
+const TRACKS_CONTENTS_API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/tracks.json`;
 
 async function loadLibrary() {
   $library.innerHTML = '<div class="queue-empty">Loading…</div>';
+  const token = localStorage.getItem(PAT_KEY);
   try {
-    const res = await fetch(`${TRACKS_RAW_URL}?_=${Date.now()}`, { cache: 'no-store' });
+    const res = await fetch(TRACKS_CONTENTS_API, {
+      cache: 'no-store',
+      headers: token ? ghHeaders(token) : { Accept: 'application/vnd.github+json' },
+    });
     if (!res.ok) throw new Error(`${res.status}`);
-    const tracks = await res.json();
+    const data = await res.json();
+    const tracks = JSON.parse(atob(data.content.replace(/\n/g, '')));
     renderLibrary(tracks);
   } catch (e) {
-    console.warn('raw fetch failed, falling back to Pages-served tracks.json', e);
-    try {
-      const res = await fetch(`tracks.json?_=${Date.now()}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`${res.status}`);
-      renderLibrary(await res.json());
-    } catch (e2) {
-      $library.innerHTML = `<div class="queue-empty">Failed to load tracks.json (${e2.message})</div>`;
-    }
+    $library.innerHTML = `<div class="queue-empty">Failed to load tracks.json (${e.message})</div>`;
   }
 }
 
