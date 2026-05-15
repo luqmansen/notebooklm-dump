@@ -309,7 +309,12 @@ async function getFFmpeg() {
       ]);
       console.log('ffmpeg.wasm: loading core…');
       await ffmpeg.load({ coreURL, wasmURL, workerURL });
-      console.log('ffmpeg.wasm: ready');
+      // Surface ffmpeg's internal logs in DevTools so we can see codec/thread info.
+      ffmpeg.on('log', ({ message }) => console.debug('[ffmpeg]', message));
+      console.log(
+        `ffmpeg.wasm: ready (crossOriginIsolated=${window.crossOriginIsolated}, ` +
+        `hardwareConcurrency=${navigator.hardwareConcurrency})`
+      );
       return { ffmpeg, fetchFile };
     } catch (e) {
       // Allow retry on the next pipeline invocation.
@@ -363,11 +368,13 @@ async function transcodeForUpload(item) {
     };
     ffmpeg.on('progress', progressHandler);
 
+    const startMs = Date.now();
     try {
       await ffmpeg.exec([
         '-i', inName,
         '-vn',                        // drop any video track
-        '-ac', '1',                   // force mono — voice content doesn't need stereo
+        '-ac', '1',                   // mono — voice doesn't need stereo
+        '-ar', '22050',               // 22 kHz — twice the highest speech frequency, halves encode work
         '-c:a', 'aac',
         '-b:a', `${targetKbps}k`,
         '-movflags', '+faststart',    // playable while streaming
@@ -376,6 +383,8 @@ async function transcodeForUpload(item) {
     } finally {
       ffmpeg.off('progress', progressHandler);
     }
+    const elapsedSec = ((Date.now() - startMs) / 1000).toFixed(1);
+    console.log(`ffmpeg.exec: transcoded ${item.file.name} in ${elapsedSec}s (target ${targetKbps}kbps)`);
 
     const data = await ffmpeg.readFile(outName);
     await ffmpeg.deleteFile(inName).catch(() => {});
