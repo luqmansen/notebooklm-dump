@@ -7,7 +7,7 @@ const MAX_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB release-asset cap
 // Cloudflare Worker upload proxy. Required because uploads.github.com does not
 // send CORS headers — see worker.js for the proxy code and README for deploy steps.
 // Leave empty to attempt direct upload (will fail with a CORS error in the browser).
-const UPLOAD_PROXY_BASE = ''; // e.g. 'https://notebooklm-upload.<sub>.workers.dev'
+const UPLOAD_PROXY_BASE = 'https://notebooklm-upload.luqmansen.workers.dev/';
 
 // ---------- DOM ----------
 const $authCard   = document.getElementById('auth-card');
