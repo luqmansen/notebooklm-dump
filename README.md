@@ -37,5 +37,3 @@ Serverless audio library hosted on GitHub Pages. Audio files live as GitHub Rele
 - `upload.html`: 3 GitHub API calls per upload — create release, upload asset, update `tracks.json`.
 - `index.html`: fetches `tracks.json`, renders a list, plays the selected track. Browser handles streaming + seek via byte-range requests against the release CDN.
 - One release per track. Releases are permanent.
-
-See [`plan.md`](plan.md) for the full design (local only, gitignored).
