@@ -88,5 +88,45 @@
     "id": "track-mp7h93ub-c7j",
     "title": "How Google Chubby Lock Service Works",
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-c7j/How_Google_s_Chubby_lock_service_works.m4a"
+  },
+  {
+    "id": "track-mp7hqnvc-gvd",
+    "title": "Record Warehouse Speeds With Databricks Photon",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-gvd/Record_warehouse_speeds_with_Databricks_Photon.m4a"
+  },
+  {
+    "id": "track-mp7hqnvc-85x",
+    "title": "Kora Cloud Native Engine",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-85x/Kora__Cloud-Native_Engine.mp4"
+  },
+  {
+    "id": "track-mp7hqnvc-079",
+    "title": "How Databricks Rebuilt Spark In C++",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-079/How_Databricks_rebuilt_Spark_in_C%2B%2B.m4a"
+  },
+  {
+    "id": "track-mp7hqnvc-6lr",
+    "title": "Delta Lake Brings ACID To Cloud Storage",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-6lr/Delta_Lake_Brings_ACID_to_Cloud_Storage.m4a"
+  },
+  {
+    "id": "track-mp7hqnvc-zjc",
+    "title": "Rearchitecting Kafka Into Kora",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-zjc/Rearchitecting_Kafka_into_Kora.m4a"
+  },
+  {
+    "id": "track-mp7hqnvc-ogm",
+    "title": "How Delta Lake Fixed Cloud Data Swamps",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-ogm/How_Delta_Lake_Fixed_Cloud_Data_Swamps.m4a"
+  },
+  {
+    "id": "track-mp7hqnvc-cix",
+    "title": "Why Lakehouses Are Replacing Data Warehouses",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-cix/Why_Lakehouses_are_replacing_data_warehouses.m4a"
+  },
+  {
+    "id": "track-mp7hqnvd-2o1",
+    "title": "How Microsoft Scaled SQL To 100 Terabytes",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvd-2o1/How_Microsoft_Scaled_SQL_to_100_Terabytes.m4a"
   }
 ]
