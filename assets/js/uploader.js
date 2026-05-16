@@ -35,6 +35,107 @@ const $uploadStatus = document.getElementById('upload-status');
 const $libraryCard       = document.getElementById('library-card');
 const $library           = document.getElementById('library');
 const $libraryRefreshBtn = document.getElementById('library-refresh-btn');
+const $knownTags         = document.getElementById('known-tags');
+
+// Union of all tags currently in tracks.json plus any added in this session,
+// powering the <datalist> autocomplete on every tag input.
+const knownTagSet = new Set();
+function refreshKnownTags(tracks) {
+  if (Array.isArray(tracks)) {
+    for (const t of tracks) {
+      if (Array.isArray(t.tags)) for (const tag of t.tags) knownTagSet.add(tag);
+    }
+  }
+  $knownTags.innerHTML = '';
+  for (const tag of Array.from(knownTagSet).sort((a, b) => a.localeCompare(b))) {
+    const opt = document.createElement('option');
+    opt.value = tag;
+    $knownTags.appendChild(opt);
+  }
+}
+
+function normalizeTag(raw) {
+  return raw.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+// Renders a tag editor bound to a tags array. Mutates the array in place; calls
+// onChange (if given) after each edit so callers can persist. Returns the
+// root element.
+function makeTagEditor(tagsRef, { disabled = false, onChange } = {}) {
+  const root = document.createElement('div');
+  root.className = 'tag-editor';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'tag-input';
+  input.placeholder = '+ tag';
+  input.setAttribute('list', 'known-tags');
+  input.disabled = disabled;
+
+  function render() {
+    root.innerHTML = '';
+    for (const tag of tagsRef.value) {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      const label = document.createElement('span');
+      label.textContent = tag;
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'tag-chip-remove';
+      rm.textContent = '×';
+      rm.title = 'Remove tag';
+      rm.disabled = input.disabled;
+      rm.addEventListener('click', async () => {
+        tagsRef.value = tagsRef.value.filter(x => x !== tag);
+        render();
+        if (onChange) {
+          try { await onChange(tagsRef.value); }
+          catch (e) { console.error('tag remove persist failed', e); }
+        }
+      });
+      chip.append(label, rm);
+      root.appendChild(chip);
+    }
+    root.appendChild(input);
+  }
+
+  async function commit() {
+    const tag = normalizeTag(input.value);
+    input.value = '';
+    if (!tag) return;
+    if (tagsRef.value.includes(tag)) { render(); return; }
+    tagsRef.value = [...tagsRef.value, tag];
+    knownTagSet.add(tag);
+    refreshKnownTags();
+    render();
+    if (onChange) {
+      try { await onChange(tagsRef.value); }
+      catch (e) { console.error('tag add persist failed', e); }
+    }
+  }
+
+  input.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      await commit();
+    } else if (e.key === 'Backspace' && input.value === '' && tagsRef.value.length > 0) {
+      // Backspace on empty input pops the last tag back into the input.
+      e.preventDefault();
+      const popped = tagsRef.value[tagsRef.value.length - 1];
+      tagsRef.value = tagsRef.value.slice(0, -1);
+      render();
+      input.value = popped;
+      if (onChange) {
+        try { await onChange(tagsRef.value); }
+        catch (err) { console.error('tag pop persist failed', err); }
+      }
+    }
+  });
+  input.addEventListener('blur', commit);
+
+  render();
+  return { root };
+}
 
 // ---------- helpers ----------
 function setStatus(el, msg, kind) {
@@ -167,6 +268,7 @@ async function loadLibrary() {
     if (!res.ok) throw new Error(`${res.status}`);
     const data = await res.json();
     const tracks = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    refreshKnownTags(tracks);
     renderLibrary(tracks);
   } catch (e) {
     $library.innerHTML = `<div class="queue-empty">Failed to load tracks.json (${e.message})</div>`;
@@ -183,6 +285,8 @@ function renderLibrary(tracks) {
   for (const t of tracks) {
     const row = document.createElement('div');
     row.className = 'library-item';
+    const topRow = document.createElement('div');
+    topRow.className = 'library-item-row';
 
     const input = document.createElement('input');
     input.type = 'text';
@@ -255,7 +359,37 @@ function renderLibrary(tracks) {
       }
     });
 
-    row.append(input, status, del);
+    topRow.append(input, status, del);
+    row.appendChild(topRow);
+
+    // Tag editor: persists each change individually to tracks.json. Replaces
+    // the whole tags array on each commit so removals are honored too.
+    const tagsRef = { value: Array.isArray(t.tags) ? [...t.tags] : [] };
+    const editor = makeTagEditor(tagsRef, {
+      onChange: async (next) => {
+        const showSaving = (txt, cls) => {
+          status.textContent = txt;
+          status.className = `library-status${cls ? ' ' + cls : ''}`;
+        };
+        try {
+          showSaving('saving…');
+          await updateLibrary(list => {
+            const idx = list.findIndex(x => x.id === t.id);
+            if (idx === -1) throw new Error('track not in tracks.json');
+            if (next.length > 0) list[idx].tags = next;
+            else delete list[idx].tags;
+            return { list, msg: `library: tag ${t.id}` };
+          });
+          t.tags = next;
+          showSaving('saved', 'ok');
+          setTimeout(() => { if (status.textContent === 'saved') showSaving(''); }, 2000);
+        } catch (e) {
+          console.error('tag update failed', e);
+          showSaving('err', 'err');
+        }
+      },
+    });
+    row.appendChild(editor.root);
     $library.appendChild(row);
   }
 }
@@ -322,6 +456,7 @@ function addFilesToQueue(files) {
       file: f,
       transcodedFile: null,
       title: titleizeFromFilename(f.name),
+      tags: [],
       status: 'pending',
       progress: 0,
       error: null,
@@ -369,6 +504,13 @@ function renderQueue() {
 
     top.append(titleInput, remove);
 
+    // Tag editor for the queued item — pre-upload, stored on item.tags and
+    // sent along when we append to tracks.json after the upload succeeds.
+    const tagEditor = makeTagEditor({ value: item.tags }, {
+      disabled: isUploading || item.status === 'done',
+      onChange: (next) => { item.tags = next; },
+    });
+
     const meta = document.createElement('div');
     meta.className = 'queue-meta';
     const size = document.createElement('span');
@@ -385,7 +527,7 @@ function renderQueue() {
     bar.style.width = `${item.progress * 100}%`;
     progress.appendChild(bar);
 
-    row.append(top, meta, progress);
+    row.append(top, tagEditor.root, meta, progress);
 
     item.row = row;
     item.titleInput = titleInput;
@@ -708,10 +850,9 @@ async function pipeline(item, token) {
     }
 
     updateItem(item, { status: 'done', progress: 1 });
-    return {
-      ok: true,
-      entry: { id: item.id, title: item.title, url: asset.browser_download_url },
-    };
+    const entry = { id: item.id, title: item.title, url: asset.browser_download_url };
+    if (Array.isArray(item.tags) && item.tags.length > 0) entry.tags = [...item.tags];
+    return { ok: true, entry };
   } catch (e) {
     console.error(`pipeline failed for ${item.id}:`, e);
     updateItem(item, { status: 'failed', error: e.message });

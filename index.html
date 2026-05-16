@@ -43,6 +43,34 @@
     font-size: 0.9rem;
     margin: 0;
   }
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters input, .filters select {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    padding: 0.5rem 0.65rem;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .filters input { flex: 1; min-width: 0; }
+  .filters select {
+    flex: 0 0 auto;
+    padding-right: 1.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23a0a0a0' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+  }
+  .filters input:focus, .filters select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
   .tracks {
     background: var(--card);
     border-radius: 12px;
@@ -52,9 +80,7 @@
     max-height: 40vh;
     overflow-y: auto;
   }
-  .tracks:empty::after {
-    content: "No tracks yet. Visit /upload.html to add one.";
-    display: block;
+  .tracks-empty {
     padding: 1.5rem;
     color: var(--muted);
     text-align: center;
@@ -72,11 +98,56 @@
   .track-title {
     font-weight: 500;
     font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .track-status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    flex: 0 0 auto;
+  }
+  .track-status-dot.in-progress { background: var(--accent); }
+  .track-status-dot.untouched   { background: #555; }
+  .track-status-dot.done        { background: transparent; border: 1px solid #555; }
+  .track.done .track-title      { color: var(--muted); }
+  .track-progress-label {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+  }
+  .track-progress {
+    margin-top: 0.4rem;
+    height: 2px;
+    background: var(--card-2);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .track-progress-bar {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s ease;
   }
   .track-artist {
     color: var(--accent);
     font-size: 0.8rem;
     margin-top: 0.15rem;
+  }
+  .track-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+  }
+  .track-tag {
+    background: var(--card-2);
+    color: var(--muted);
+    font-size: 0.7rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
   }
   .now-playing {
     background: var(--card);
@@ -151,6 +222,13 @@
     <h1>Audio Library</h1>
     <p>Data-system related podcast, generated from NotebookLM.</p>
   </header>
+
+  <div class="filters">
+    <input id="search" type="search" placeholder="Search tracks..." aria-label="Search tracks">
+    <select id="tag-filter" aria-label="Filter by tag">
+      <option value="">All tags</option>
+    </select>
+  </div>
 
   <ul id="tracks" class="tracks" aria-label="Track list"></ul>
 

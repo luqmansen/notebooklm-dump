@@ -1,4 +1,6 @@
-const POS_KEY = (id) => `pos:${id}`;
+const POS_KEY  = (id) => `pos:${id}`;
+const DONE_KEY = (id) => `done:${id}`;
+const DUR_KEY  = (id) => `dur:${id}`;   // cached so list can show % without loading audio
 const RESUME_THRESHOLD_SEC = 5;
 
 // Fetch tracks.json via the GitHub Contents API instead of raw.githubusercontent.com.
@@ -10,12 +12,14 @@ const RESUME_THRESHOLD_SEC = 5;
 const TRACKS_CONTENTS_API = 'https://api.github.com/repos/luqmansen/notebooklm-dump/contents/tracks.json';
 const TRACKS_FALLBACK_URL = 'tracks.json'; // Pages-served — older but available offline
 
-const $tracks  = document.getElementById('tracks');
-const $audio   = document.getElementById('player');
-const $np      = document.getElementById('now-playing');
-const $title   = document.getElementById('np-title');
-const $artist  = document.getElementById('np-artist');
-const $resume  = document.getElementById('resume');
+const $tracks    = document.getElementById('tracks');
+const $audio     = document.getElementById('player');
+const $np        = document.getElementById('now-playing');
+const $title     = document.getElementById('np-title');
+const $artist    = document.getElementById('np-artist');
+const $resume    = document.getElementById('resume');
+const $search    = document.getElementById('search');
+const $tagFilter = document.getElementById('tag-filter');
 
 let plyr = null;
 let active = null;       // current track object
@@ -53,28 +57,185 @@ async function loadCatalog() {
     }
   }
 
+  refreshTagFilter();
   renderList();
   cleanupStalePositions();
 }
 
+// Active saved position wins over a stale "done" flag — resuming a finished
+// track moves it back to in-progress as soon as the listener crosses the
+// timeupdate threshold (player.js writes pos:<id> then).
+const STATUS_ORDER = { 'in-progress': 0, 'untouched': 1, 'done': 2 };
+function trackStatus(id) {
+  if (localStorage.getItem(POS_KEY(id)))  return 'in-progress';
+  if (localStorage.getItem(DONE_KEY(id))) return 'done';
+  return 'untouched';
+}
+
+// Returns { pos, dur, pct } where pct is null if duration unknown (track never
+// loaded). Falls back to ordering by raw seconds when pct is missing.
+function trackProgress(id) {
+  const pos = parseFloat(localStorage.getItem(POS_KEY(id)) || '0');
+  if (!(pos > 0)) return null;
+  const dur = parseFloat(localStorage.getItem(DUR_KEY(id)) || '0');
+  return { pos, dur, pct: dur > 0 ? Math.min(1, pos / dur) : null };
+}
+
+function refreshTagFilter() {
+  const all = new Set();
+  for (const t of catalog) {
+    if (Array.isArray(t.tags)) for (const tag of t.tags) all.add(tag);
+  }
+  const selected = $tagFilter.value;
+  const sorted = Array.from(all).sort((a, b) => a.localeCompare(b));
+  $tagFilter.innerHTML = '';
+  const allOpt = document.createElement('option');
+  allOpt.value = '';
+  allOpt.textContent = 'All tags';
+  $tagFilter.appendChild(allOpt);
+  for (const tag of sorted) {
+    const opt = document.createElement('option');
+    opt.value = tag;
+    opt.textContent = tag;
+    $tagFilter.appendChild(opt);
+  }
+  if (sorted.includes(selected)) $tagFilter.value = selected;
+}
+
+function visibleTracks() {
+  const query = $search.value.trim().toLowerCase();
+  const tag   = $tagFilter.value;
+  return catalog
+    .filter(t => {
+      if (query && !t.title.toLowerCase().includes(query)) return false;
+      if (tag && !(Array.isArray(t.tags) && t.tags.includes(tag))) return false;
+      return true;
+    })
+    .map(t => ({ t, status: trackStatus(t.id) }))
+    .sort((a, b) => {
+      const so = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      if (so !== 0) return so;
+      // Within the in-progress group, furthest-played first. Pct wins; if
+      // duration is unknown for one side, fall back to raw seconds.
+      if (a.status === 'in-progress') {
+        const pa = trackProgress(a.t.id);
+        const pb = trackProgress(b.t.id);
+        const va = pa?.pct ?? (pa?.pos ?? 0) / 1e9;
+        const vb = pb?.pct ?? (pb?.pos ?? 0) / 1e9;
+        return vb - va;
+      }
+      return 0;
+    })
+    .map(x => x.t);
+}
+
 function renderList() {
   $tracks.innerHTML = '';
-  for (const t of catalog) {
+  const list = visibleTracks();
+  if (list.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'tracks-empty';
+    empty.textContent = catalog.length === 0
+      ? 'No tracks yet. Visit /upload.html to add one.'
+      : 'No tracks match your filters.';
+    $tracks.appendChild(empty);
+    return;
+  }
+  for (const t of list) {
+    const status = trackStatus(t.id);
     const li = document.createElement('li');
-    li.className = 'track';
+    li.className = `track ${status}`;
     li.dataset.id = t.id;
-    li.innerHTML = `<div class="track-title"></div>`;
-    li.querySelector('.track-title').textContent = t.title;
+    if (active && active.id === t.id) li.classList.add('active');
+
+    const title = document.createElement('div');
+    title.className = 'track-title';
+    const dot = document.createElement('span');
+    dot.className = `track-status-dot ${status}`;
+    dot.title = status === 'in-progress' ? 'In progress' : status === 'done' ? 'Finished' : 'Not started';
+    const titleText = document.createElement('span');
+    titleText.textContent = t.title;
+    title.append(dot, titleText);
+
+    const prog = status === 'in-progress' ? trackProgress(t.id) : null;
+    if (prog) {
+      const lbl = document.createElement('span');
+      lbl.className = 'track-progress-label';
+      lbl.textContent = prog.pct !== null
+        ? `${Math.round(prog.pct * 100)}%`
+        : fmt(prog.pos);
+      title.appendChild(lbl);
+    }
+    li.appendChild(title);
+
     if (t.artist) {
       const artist = document.createElement('div');
       artist.className = 'track-artist';
       artist.textContent = t.artist;
       li.appendChild(artist);
     }
+    if (Array.isArray(t.tags) && t.tags.length > 0) {
+      const tagsEl = document.createElement('div');
+      tagsEl.className = 'track-tags';
+      for (const tag of t.tags) {
+        const chip = document.createElement('span');
+        chip.className = 'track-tag';
+        chip.textContent = tag;
+        tagsEl.appendChild(chip);
+      }
+      li.appendChild(tagsEl);
+    }
+    if (prog && prog.pct !== null) {
+      const wrap = document.createElement('div');
+      wrap.className = 'track-progress';
+      const bar = document.createElement('div');
+      bar.className = 'track-progress-bar';
+      bar.style.width = `${prog.pct * 100}%`;
+      wrap.appendChild(bar);
+      li.appendChild(wrap);
+    }
     li.addEventListener('click', () => selectTrack(t));
     $tracks.appendChild(li);
   }
 }
+
+// Inline-updates the active track's progress bar + label without re-sorting
+// the list (avoids items jumping around while the user listens).
+function updateActiveProgress() {
+  if (!active) return;
+  const li = $tracks.querySelector(`.track[data-id="${CSS.escape(active.id)}"]`);
+  if (!li) return;
+  const dur = isFinite($audio.duration) && $audio.duration > 0
+    ? $audio.duration
+    : parseFloat(localStorage.getItem(DUR_KEY(active.id)) || '0');
+  const pos = $audio.currentTime;
+  if (!(pos > 0)) return;
+  const pct = dur > 0 ? Math.min(1, pos / dur) : null;
+
+  let label = li.querySelector('.track-progress-label');
+  if (!label) {
+    label = document.createElement('span');
+    label.className = 'track-progress-label';
+    li.querySelector('.track-title').appendChild(label);
+  }
+  label.textContent = pct !== null ? `${Math.round(pct * 100)}%` : fmt(pos);
+
+  if (pct !== null) {
+    let wrap = li.querySelector('.track-progress');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.className = 'track-progress';
+      const bar = document.createElement('div');
+      bar.className = 'track-progress-bar';
+      wrap.appendChild(bar);
+      li.appendChild(wrap);
+    }
+    wrap.firstChild.style.width = `${pct * 100}%`;
+  }
+}
+
+$search.addEventListener('input', renderList);
+$tagFilter.addEventListener('change', renderList);
 
 function selectTrack(track) {
   active = track;
@@ -132,6 +293,10 @@ if ('mediaSession' in navigator) {
 }
 
 function onMetadataReady() {
+  if (active && isFinite($audio.duration) && $audio.duration > 0) {
+    localStorage.setItem(DUR_KEY(active.id), String($audio.duration));
+    updateActiveProgress(); // upgrade any seconds-only label to a percentage
+  }
   const saved = parseFloat(localStorage.getItem(POS_KEY(active.id)) || '0');
   if (saved > RESUME_THRESHOLD_SEC && saved < ($audio.duration - RESUME_THRESHOLD_SEC)) {
     promptResume(saved);
@@ -165,27 +330,51 @@ function promptResume(sec) {
 
 $audio.addEventListener('timeupdate', () => {
   if (!active) return;
-  const now = Date.now();
-  if (now - lastWrite < 3000) return;
-  lastWrite = now;
   const t = $audio.currentTime;
-  if (t > RESUME_THRESHOLD_SEC && t < ($audio.duration - RESUME_THRESHOLD_SEC)) {
-    localStorage.setItem(POS_KEY(active.id), String(t));
+  let needsRerender = false;
+
+  // Crossing the resume threshold on a previously-finished track moves it
+  // back to in-progress — re-render so it leaves the "done" group.
+  if (t > RESUME_THRESHOLD_SEC && localStorage.getItem(DONE_KEY(active.id))) {
+    localStorage.removeItem(DONE_KEY(active.id));
+    needsRerender = true;
   }
+
+  const now = Date.now();
+  if (now - lastWrite >= 3000) {
+    lastWrite = now;
+    if (t > RESUME_THRESHOLD_SEC && t < ($audio.duration - RESUME_THRESHOLD_SEC)) {
+      // First save promotes the track from untouched → in-progress; trigger a
+      // re-render so it joins the in-progress group at the top of the list.
+      const hadPos = localStorage.getItem(POS_KEY(active.id)) !== null;
+      localStorage.setItem(POS_KEY(active.id), String(t));
+      if (!hadPos) needsRerender = true;
+    }
+  }
+
+  if (needsRerender) renderList();
+  else updateActiveProgress();
 });
 
 $audio.addEventListener('ended', () => {
-  if (active) localStorage.removeItem(POS_KEY(active.id));
+  if (!active) return;
+  localStorage.removeItem(POS_KEY(active.id));
+  localStorage.setItem(DONE_KEY(active.id), '1');
+  renderList();
 });
 
 function cleanupStalePositions() {
   const validIds = new Set(catalog.map(t => t.id));
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i);
-    if (key?.startsWith('pos:')) {
-      const id = key.slice(4);
-      if (!validIds.has(id)) localStorage.removeItem(key);
-    }
+    if (!key) continue;
+    const prefix =
+      key.startsWith('pos:')  ? 'pos:'  :
+      key.startsWith('done:') ? 'done:' :
+      key.startsWith('dur:')  ? 'dur:'  : null;
+    if (!prefix) continue;
+    const id = key.slice(prefix.length);
+    if (!validIds.has(id)) localStorage.removeItem(key);
   }
 }
 

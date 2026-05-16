@@ -141,14 +141,15 @@
   /* Library list — similar to queue but no progress/size, with delete button */
   .library-item {
     display: flex;
-    gap: 0.5rem;
-    align-items: center;
+    flex-direction: column;
+    gap: 0.3rem;
     background: var(--card-2);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.5rem 0.7rem;
     margin-bottom: 0.5rem;
   }
+  .library-item-row { display: flex; gap: 0.5rem; align-items: center; }
   .library-title-input {
     flex: 1;
     margin: 0;
@@ -207,6 +208,53 @@
     font-size: 0.85em;
   }
   .hidden { display: none !important; }
+
+  /* Tag editor — used in both queue items (new uploads) and library items. */
+  .tag-editor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.4rem;
+  }
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--card);
+    color: var(--text);
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .tag-chip-remove {
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+  .tag-chip-remove:hover:not(:disabled) { color: var(--danger); }
+  .tag-input {
+    flex: 0 1 8rem;
+    margin: 0;
+    padding: 0.25rem 0.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 0.78rem;
+    font-family: inherit;
+    min-width: 5rem;
+  }
+  .tag-input:focus {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+  }
 </style>
 </head>
 <body>
@@ -270,6 +318,10 @@
     <div id="upload-status" class="status"></div>
   </section>
 </div>
+
+<!-- Shared datalist with all tags currently in tracks.json. Repopulated each
+     time the library loads so new tags from this session also autocomplete. -->
+<datalist id="known-tags"></datalist>
 
 <!-- COI service worker shim: injects COOP/COEP headers so SharedArrayBuffer
      works on GitHub Pages, which is the prerequisite for multi-threaded
