@@ -825,6 +825,24 @@ async function batchAppendTracks(token, entries) {
   });
 }
 
+// Reads the duration from a File via a throwaway <audio preload="metadata"> —
+// the browser only decodes the header, not the whole stream. Returns 0 on
+// failure so we just skip the field rather than blocking the upload.
+function probeDuration(file) {
+  return new Promise((resolve) => {
+    const audio = document.createElement('audio');
+    const url = URL.createObjectURL(file);
+    const done = (d) => {
+      URL.revokeObjectURL(url);
+      resolve(isFinite(d) && d > 0 ? d : 0);
+    };
+    audio.preload = 'metadata';
+    audio.addEventListener('loadedmetadata', () => done(audio.duration), { once: true });
+    audio.addEventListener('error', () => done(0), { once: true });
+    audio.src = url;
+  });
+}
+
 // ---------- per-file pipeline ----------
 async function pipeline(item, token) {
   try {
@@ -833,6 +851,7 @@ async function pipeline(item, token) {
       await transcodeForUpload(item);
     }
     const fileToUpload = item.transcodedFile || item.file;
+    const duration = await probeDuration(fileToUpload);
 
     // 2. Create release
     updateItem(item, { status: 'creating_release', progress: 0 });
@@ -854,6 +873,7 @@ async function pipeline(item, token) {
     updateItem(item, { status: 'done', progress: 1 });
     const entry = { id: item.id, title: item.title, url: asset.browser_download_url };
     if (Array.isArray(item.tags) && item.tags.length > 0) entry.tags = [...item.tags];
+    if (duration > 0) entry.duration = duration;
     return { ok: true, entry };
   } catch (e) {
     console.error(`pipeline failed for ${item.id}:`, e);

@@ -170,13 +170,19 @@ function renderList() {
     titleText.textContent = t.title;
     title.append(dot, titleText);
 
+    // Prefer the duration baked into tracks.json (known for every track since
+    // the backfill); fall back to the localStorage cache for legacy entries.
+    const dur = t.duration || parseFloat(localStorage.getItem(DUR_KEY(t.id)) || '0');
     const prog = status === 'in-progress' ? trackProgress(t.id) : null;
+    let labelText = dur > 0 ? fmt(dur) : '';
     if (prog) {
+      const pct = prog.pct !== null ? `${Math.round(prog.pct * 100)}%` : fmt(prog.pos);
+      labelText = labelText ? `${labelText} · ${pct}` : pct;
+    }
+    if (labelText) {
       const lbl = document.createElement('span');
       lbl.className = 'track-progress-label';
-      lbl.textContent = prog.pct !== null
-        ? `${Math.round(prog.pct * 100)}%`
-        : fmt(prog.pos);
+      lbl.textContent = labelText;
       title.appendChild(lbl);
     }
     li.appendChild(title);
@@ -231,7 +237,8 @@ function updateActiveProgress() {
     label.className = 'track-progress-label';
     li.querySelector('.track-title').appendChild(label);
   }
-  label.textContent = pct !== null ? `${Math.round(pct * 100)}%` : fmt(pos);
+  const pctStr = pct !== null ? `${Math.round(pct * 100)}%` : fmt(pos);
+  label.textContent = dur > 0 ? `${fmt(dur)} · ${pctStr}` : pctStr;
 
   if (pct !== null) {
     let wrap = li.querySelector('.track-progress');
