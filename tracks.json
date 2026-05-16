@@ -2,82 +2,98 @@
   {
     "id": "track-mp7biw7y",
     "title": "How MapReduce Tamed Massive Data Clusters",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7biw7y/How_MapReduce_Tamed_Massive_Data_Clusters.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7biw7y/How_MapReduce_Tamed_Massive_Data_Clusters.m4a",
+    "duration": 2820.481451
   },
   {
     "id": "track-mp7ceqvr",
     "title": "How Amazon Aurora Decoupled Cloud Databases",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7ceqvr/How_Amazon_Aurora_Decoupled_Cloud_Databases.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7ceqvr/How_Amazon_Aurora_Decoupled_Cloud_Databases.m4a",
+    "duration": 2747.129615
   },
   {
     "id": "track-mp7ckdyv",
     "title": "C Store Beat The Row Store",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7ckdyv/Why_C-Store_Beat_the_Row_Store.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7ckdyv/Why_C-Store_Beat_the_Row_Store.m4a",
+    "duration": 2938.601361
   },
   {
     "id": "track-mp7d7xdy",
     "title": "C Store Achieves 150x Faster Read Speeds [Short]",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7d7xdy/C-Store_achieves_150x_faster_read_speeds.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7d7xdy/C-Store_achieves_150x_faster_read_speeds.m4a",
+    "duration": 100.890703
   },
   {
     "id": "track-mp7e777e-txg",
     "title": "Paxos Made Simple",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7e777e-txg/The_Logic_of_Paxos_Made_Simple.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7e777e-txg/The_Logic_of_Paxos_Made_Simple.m4a",
+    "duration": 3375.600998
   },
   {
     "id": "track-mp7e777f-lp0",
     "title": "Decoupling Storage From Compute In Snowflake",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7e777f-lp0/Decoupling_storage_from_compute_in_Snowflake.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7e777f-lp0/Decoupling_storage_from_compute_in_Snowflake.m4a",
+    "duration": 3522.49
   },
   {
     "id": "track-mp7e777f-2e4",
     "title": "Meta's Unified Execution Engine Velox",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7e777f-2e4/Meta_s_Unified_Execution_Engine_Velox.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7e777f-2e4/Meta_s_Unified_Execution_Engine_Velox.m4a",
+    "duration": 3322.938005
   },
   {
     "id": "track-mp7gf3uf-sl4",
     "title": "How Column Stores Master Modern Hardware",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3uf-sl4/How_column_stores_master_modern_hardware.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3uf-sl4/How_column_stores_master_modern_hardware.m4a",
+    "duration": 3020.96254
   },
   {
     "id": "track-mp7gf3ug-a6g",
     "title": "Why Raft Replaced Paxos For Consensus",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-a6g/Why_Raft_Replaced_Paxos_for_Consensus.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-a6g/Why_Raft_Replaced_Paxos_for_Consensus.m4a",
+    "duration": 3690.533016
   },
   {
     "id": "track-mp7gf3ug-4aw",
     "title": "The Engineering Behind Google Bigtable",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-4aw/The_engineering_behind_Google_Bigtable.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-4aw/The_engineering_behind_Google_Bigtable.m4a",
+    "duration": 3432.977007
   },
   {
     "id": "track-mp7gf3ug-8ee",
     "title": "Dataflow - How Google Processes Out Of Order Data",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-8ee/How_Google_processes_out_of_order_data.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-8ee/How_Google_processes_out_of_order_data.m4a",
+    "duration": 2351.972426
   },
   {
     "id": "track-mp7gf3ug-nk0",
     "title": "Dremel - Querying A Trillion Rows In Seconds",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-nk0/Querying_a_trillion_rows_in_seconds.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-nk0/Querying_a_trillion_rows_in_seconds.m4a",
+    "duration": 3081.218322
   },
   {
     "id": "track-mp7gf3ug-h59",
     "title": "Mathematical Guarantees For AI Vector Search",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-h59/Mathematical_Guarantees_for_AI_Vector_Search.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-h59/Mathematical_Guarantees_for_AI_Vector_Search.m4a",
+    "duration": 1345.642812
   },
   {
     "id": "track-mp7h93ub-a6z",
     "title": "How ZooKeeper Replaced Blocking Distributed Locks",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-a6z/How_ZooKeeper_Replaced_Blocking_Distributed_Locks.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-a6z/How_ZooKeeper_Replaced_Blocking_Distributed_Locks.m4a",
+    "duration": 2262.97034
   },
   {
     "id": "track-mp7h93ub-v96",
     "title": "Apache Datafusion",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-v96/The_Death_of_the_Monolithic_Database.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-v96/The_Death_of_the_Monolithic_Database.m4a",
+    "duration": 3542.575011
   },
   {
     "id": "track-mp7h93ub-dqx",
     "title": "How Apache Flink Unified Data Processing",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-dqx/How_Apache_Flink_unified_data_processing.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-dqx/How_Apache_Flink_unified_data_processing.m4a",
+    "duration": 3352.566009
   },
   {
     "id": "track-mp7h93ub-at7",
@@ -86,72 +102,86 @@
     "tags": [
       "filesystem",
       "default-prompt"
-    ]
+    ],
+    "duration": 3239.601633
   },
   {
     "id": "track-mp7h93ub-c7j",
     "title": "How Google Chubby Lock Service Works",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-c7j/How_Google_s_Chubby_lock_service_works.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7h93ub-c7j/How_Google_s_Chubby_lock_service_works.m4a",
+    "duration": 2849.436735
   },
   {
     "id": "track-mp7hqnvc-gvd",
     "title": "Record Warehouse Speeds With Databricks Photon",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-gvd/Record_warehouse_speeds_with_Databricks_Photon.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-gvd/Record_warehouse_speeds_with_Databricks_Photon.m4a",
+    "duration": 97.709569
   },
   {
     "id": "track-mp7hqnvc-85x",
     "title": "[Kora] Cloud Native Engine (brief)",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-85x/Kora__Cloud-Native_Engine.mp4"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-85x/Kora__Cloud-Native_Engine.mp4",
+    "duration": 515.715193
   },
   {
     "id": "track-mp7hqnvc-079",
     "title": "How Databricks Rebuilt Spark In C++",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-079/How_Databricks_rebuilt_Spark_in_C%2B%2B.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-079/How_Databricks_rebuilt_Spark_in_C%2B%2B.m4a",
+    "duration": 2886.658322
   },
   {
     "id": "track-mp7hqnvc-6lr",
     "title": "Delta Lake Brings ACID To Cloud Storage",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-6lr/Delta_Lake_Brings_ACID_to_Cloud_Storage.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-6lr/Delta_Lake_Brings_ACID_to_Cloud_Storage.m4a",
+    "duration": 104.930975
   },
   {
     "id": "track-mp7hqnvc-zjc",
     "title": "[Kora] Rearchitecting Kafka Into Kora",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-zjc/Rearchitecting_Kafka_into_Kora.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-zjc/Rearchitecting_Kafka_into_Kora.m4a",
+    "duration": 3552.978005
   },
   {
     "id": "track-mp7hqnvc-ogm",
     "title": "How Delta Lake Fixed Cloud Data Swamps",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-ogm/How_Delta_Lake_Fixed_Cloud_Data_Swamps.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-ogm/How_Delta_Lake_Fixed_Cloud_Data_Swamps.m4a",
+    "duration": 3817.476009
   },
   {
     "id": "track-mp7hqnvc-cix",
     "title": "Why Lakehouses Are Replacing Data Warehouses",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-cix/Why_Lakehouses_are_replacing_data_warehouses.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvc-cix/Why_Lakehouses_are_replacing_data_warehouses.m4a",
+    "duration": 4657.922993
   },
   {
     "id": "track-mp7hqnvd-2o1",
     "title": "How Microsoft Scaled SQL To 100 Terabytes",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvd-2o1/How_Microsoft_Scaled_SQL_to_100_Terabytes.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvd-2o1/How_Microsoft_Scaled_SQL_to_100_Terabytes.m4a",
+    "duration": 3537.049002
   },
   {
     "id": "track-mp848shx-3jr",
     "title": "How Google Spanner Uses Atomic Clocks",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp848shx-3jr/How_Google_Spanner_uses_atomic_clocks.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp848shx-3jr/How_Google_Spanner_uses_atomic_clocks.m4a",
+    "duration": 2540.773878
   },
   {
     "id": "track-mp848shx-dc8",
     "title": "How Apache Spark Solved The Disk Bottleneck",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp848shx-dc8/How_Apache_Spark_Solved_the_Disk_Bottleneck.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp848shx-dc8/How_Apache_Spark_Solved_the_Disk_Bottleneck.m4a",
+    "duration": 2731.897324
   },
   {
     "id": "track-mp848shx-wwl",
     "title": "Why Database Protocols Hold Data Hostage",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp848shx-wwl/Why_database_protocols_hold_data_hostage.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp848shx-wwl/Why_database_protocols_hold_data_hostage.m4a",
+    "duration": 2875.884263
   },
   {
     "id": "track-mp84pwxo-cg7",
     "title": "How Presto Runs SQL On Everything",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp84pwxo-cg7/How_Presto_runs_SQL_on_everything.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp84pwxo-cg7/How_Presto_runs_SQL_on_everything.m4a",
+    "duration": 2053.08517
   },
   {
     "id": "track-mp84pwxo-wcx",
@@ -160,7 +190,8 @@
     "tags": [
       "filesystem",
       "default-prompt"
-    ]
+    ],
+    "duration": 3651.731995
   },
   {
     "id": "track-mp84pwxn-wu2",
@@ -168,7 +199,8 @@
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp84pwxn-wu2/How_MonetDBX100_Solved_the_Database_Bottleneck.m4a",
     "tags": [
       "column store"
-    ]
+    ],
+    "duration": 2542.399274
   },
   {
     "id": "track-mp8xj725-k1f",
@@ -176,7 +208,8 @@
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8xj725-k1f/Facebook_s_Billion_Requests_Per_Second_Cache.m4a",
     "tags": [
       "in-memory"
-    ]
+    ],
+    "duration": 3908.917007
   },
   {
     "id": "track-mp8xj725-pu4",
@@ -184,7 +217,8 @@
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8xj725-pu4/Scaling_Facebook_s_social_graph_with_TAO.m4a",
     "tags": [
       "graph"
-    ]
+    ],
+    "duration": 2903.562449
   },
   {
     "id": "track-mp8xj725-ugz",
@@ -192,7 +226,8 @@
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8xj725-ugz/How_Hive_Bridged_SQL_and_Hadoop.m4a",
     "tags": [
       "distributed-sql"
-    ]
+    ],
+    "duration": 2911.480454
   },
   {
     "id": "track-mp8xs17i-pw4",
@@ -201,12 +236,14 @@
     "tags": [
       "distributed-sql",
       "custom-prompt"
-    ]
+    ],
+    "duration": 2404.612063
   },
   {
     "id": "track-mp8ya1px-ewp",
     "title": "Distributed Tracing With Google Dapper",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8ya1px-ewp/Distributed_Tracing_with_Google_Dapper.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8ya1px-ewp/Distributed_Tracing_with_Google_Dapper.m4a",
+    "duration": 2530.882177
   },
   {
     "id": "track-mp8ya1px-3y7",
@@ -214,47 +251,56 @@
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8ya1px-3y7/Why_Google_Monarch_stores_everything_in_RAM.m4a",
     "tags": [
       "in-memory"
-    ]
+    ],
+    "duration": 2569.334422
   },
   {
     "id": "track-mp8z01ze-osd",
     "title": "Engineering Cassandra For Facebook Inbox Search",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-osd/Engineering_Cassandra_for_Facebook_Inbox_Search.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-osd/Engineering_Cassandra_for_Facebook_Inbox_Search.m4a",
+    "duration": 3383.053991
   },
   {
     "id": "track-mp8z01ze-0yl",
     "title": "FoundationDB Unbundled Architecture And Deterministic Simulatio",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-0yl/FoundationDB_Unbundled_Architecture_and_Deterministic_Simulatio.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-0yl/FoundationDB_Unbundled_Architecture_and_Deterministic_Simulatio.m4a",
+    "duration": 3097.84381
   },
   {
     "id": "track-mp8z01ze-5pg",
     "title": "Vector Database Architecture For Generative AI",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-5pg/Vector_Database_Architecture_for_Generative_AI.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-5pg/Vector_Database_Architecture_for_Generative_AI.m4a",
+    "duration": 3436.808005
   },
   {
     "id": "track-mp8z01ze-8we",
     "title": "How Thrift Unified Facebook S Polyglot Architecture",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-8we/How_Thrift_unified_Facebook_s_polyglot_architecture.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-8we/How_Thrift_unified_Facebook_s_polyglot_architecture.m4a",
+    "duration": 3262.611995
   },
   {
     "id": "track-mp8z01ze-tuj",
     "title": "Facebook S User Database Migration To MyRocks",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-tuj/Facebook_s_user_database_migration_to_MyRocks.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-tuj/Facebook_s_user_database_migration_to_MyRocks.m4a",
+    "duration": 3461.445011
   },
   {
     "id": "track-mp8z01ze-rt3",
     "title": "How Transformers Broke The Sequential Bottleneck",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-rt3/How_Transformers_broke_the_sequential_bottleneck.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-rt3/How_Transformers_broke_the_sequential_bottleneck.m4a",
+    "duration": 2409.836553
   },
   {
     "id": "track-mp8z01ze-zeh",
     "title": "Why Twitter Built Recommendations On One Server",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-zeh/Why_Twitter_Built_Recommendations_on_One_Server.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-zeh/Why_Twitter_Built_Recommendations_on_One_Server.m4a",
+    "duration": 1444.931338
   },
   {
     "id": "track-mp8z01ze-npk",
     "title": "Zero Downtime Sharding For A Million Machines",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-npk/Zero_downtime_sharding_for_a_million_machines.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-npk/Zero_downtime_sharding_for_a_million_machines.m4a",
+    "duration": 3194.531701
   },
   {
     "id": "track-mp8zbaft-37s",
@@ -263,7 +309,8 @@
     "tags": [
       "graph",
       "custom-prompt"
-    ]
+    ],
+    "duration": 3405.856009
   },
   {
     "id": "track-mp8zbaft-qgk",
@@ -271,7 +318,8 @@
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8zbaft-qgk/Why_Facebook_s_Scuba_database_deletes_data.m4a",
     "tags": [
       "custom-prompt"
-    ]
+    ],
+    "duration": 2500.440816
   },
   {
     "id": "track-mp8zbaft-05t",
@@ -280,7 +328,8 @@
     "tags": [
       "in-memory",
       "custom-prompt"
-    ]
+    ],
+    "duration": 2724.211519
   },
   {
     "id": "track-mp8zbaft-hhz",
@@ -289,6 +338,7 @@
     "tags": [
       "graph",
       "custom-prompt"
-    ]
+    ],
+    "duration": 2517.925442
   }
 ]
