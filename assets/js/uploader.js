@@ -255,7 +255,7 @@ $resetSwBtn.addEventListener('click', async () => {
 // Fastly which ignores query-string cache-busters (verified), so edits take up
 // to 5 minutes to propagate. The Contents API has no edge cache; with the
 // authenticated PAT we get 5000 req/hr too. Always fresh.
-const TRACKS_CONTENTS_API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/tracks.json`;
+const TRACKS_CONTENTS_API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/tracks.json?ref=main`;
 
 async function loadLibrary() {
   $library.innerHTML = '<div class="queue-empty">Loading…</div>';
@@ -402,7 +402,7 @@ async function updateLibrary(mutator) {
   const path = `repos/${OWNER}/${REPO}/contents/tracks.json`;
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    const getRes = await fetch(`https://api.github.com/${path}`, { headers: ghHeaders(token) });
+    const getRes = await fetch(`https://api.github.com/${path}?ref=main`, { headers: ghHeaders(token) });
     if (!getRes.ok) throw new Error(`get tracks.json ${getRes.status}`);
     const meta = await getRes.json();
     let list;
@@ -420,6 +420,7 @@ async function updateLibrary(mutator) {
         message: msg,
         content: base64FromString(JSON.stringify(newList, null, 2) + '\n'),
         sha: meta.sha,
+        branch: 'main',
       }),
     });
     if (putRes.ok) return;
@@ -765,6 +766,7 @@ async function createRelease(token, trackId, title) {
       headers: ghHeaders(token, { 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         tag_name: trackId,
+        target_commitish: 'main',
         name: title || trackId,
         body: `Audio asset for "${title}".`,
       }),

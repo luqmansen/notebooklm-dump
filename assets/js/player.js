@@ -12,7 +12,7 @@ const RESUME_THRESHOLD_SEC = 5;
 // Fastly cache, only a 60s client-side max-age which `cache: 'no-store'` defeats.
 // Costs one request from the 60-per-hour-per-IP unauthenticated rate limit; fine for
 // personal use. Falls back to Pages-served tracks.json if rate-limited or offline.
-const TRACKS_CONTENTS_API = 'https://api.github.com/repos/luqmansen/notebooklm-dump/contents/tracks.json';
+const TRACKS_CONTENTS_API = 'https://api.github.com/repos/luqmansen/notebooklm-dump/contents/tracks.json?ref=main';
 const TRACKS_FALLBACK_URL = 'tracks.json'; // Pages-served — older but available offline
 
 const $tracks    = document.getElementById('tracks');
