@@ -127,6 +127,15 @@
   }
   .plyr--full-ui input[type=range] { color: var(--accent); }
   .plyr__control--overlaid { background: var(--accent); }
+  @media (max-width: 560px) {
+    .plyr--audio .plyr__controls { flex-wrap: wrap; }
+    .plyr--audio .plyr__progress__container {
+      order: -1;
+      flex: 0 0 100%;
+      margin-left: 0;
+      padding: 0 0 0.5rem;
+    }
+  }
   footer {
     margin-top: 2rem;
     text-align: center;

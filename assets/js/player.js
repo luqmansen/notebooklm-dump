@@ -89,8 +89,46 @@ function selectTrack(track) {
   $audio.src = track.url;
   $audio.load();
 
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: track.artist || '',
+    });
+  }
+
   $resume.hidden = true;
   $audio.addEventListener('loadedmetadata', onMetadataReady, { once: true });
+}
+
+function updatePositionState() {
+  if (!('mediaSession' in navigator)) return;
+  if (!isFinite($audio.duration)) return;
+  try {
+    navigator.mediaSession.setPositionState({
+      duration: $audio.duration,
+      position: $audio.currentTime,
+      playbackRate: $audio.playbackRate,
+    });
+  } catch { /* some browsers throw if duration changes mid-call */ }
+}
+
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', () => $audio.play());
+  navigator.mediaSession.setActionHandler('pause', () => $audio.pause());
+  navigator.mediaSession.setActionHandler('seekbackward', (e) => {
+    $audio.currentTime = Math.max(0, $audio.currentTime - (e.seekOffset || 5));
+  });
+  navigator.mediaSession.setActionHandler('seekforward', (e) => {
+    $audio.currentTime = Math.min($audio.duration || Infinity, $audio.currentTime + (e.seekOffset || 5));
+  });
+  navigator.mediaSession.setActionHandler('seekto', (e) => {
+    if (e.fastSeek && 'fastSeek' in $audio) $audio.fastSeek(e.seekTime);
+    else $audio.currentTime = e.seekTime;
+    updatePositionState();
+  });
+  for (const ev of ['loadedmetadata', 'seeked', 'ratechange', 'play', 'pause']) {
+    $audio.addEventListener(ev, updatePositionState);
+  }
 }
 
 function onMetadataReady() {
@@ -153,9 +191,10 @@ function cleanupStalePositions() {
 
 if (typeof Plyr !== 'undefined') {
   plyr = new Plyr($audio, {
-    controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings'],
+    controls: ['rewind', 'play', 'fast-forward', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings'],
     settings: ['speed'],
     speed: { selected: 1, options: [0.75, 1, 1.25, 1.5, 1.75, 2] },
+    seekTime: 5,
   });
 }
 
