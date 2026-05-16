@@ -255,5 +255,40 @@
     "id": "track-mp8z01ze-npk",
     "title": "Zero Downtime Sharding For A Million Machines",
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8z01ze-npk/Zero_downtime_sharding_for_a_million_machines.m4a"
+  },
+  {
+    "id": "track-mp8zbaft-37s",
+    "title": "Rebuilding Apache Giraph For One Trillion Edges",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8zbaft-37s/Rebuilding_Apache_Giraph_for_one_trillion_edges.m4a",
+    "tags": [
+      "graph",
+      "custom-prompt"
+    ]
+  },
+  {
+    "id": "track-mp8zbaft-qgk",
+    "title": "Why Facebook S Scuba Database Deletes Data",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8zbaft-qgk/Why_Facebook_s_Scuba_database_deletes_data.m4a",
+    "tags": [
+      "custom-prompt"
+    ]
+  },
+  {
+    "id": "track-mp8zbaft-05t",
+    "title": "Facebook S Gorilla And The Trillion Point Scale",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8zbaft-05t/Facebook_s_Gorilla_and_the_trillion-point_scale.m4a",
+    "tags": [
+      "in-memory",
+      "custom-prompt"
+    ]
+  },
+  {
+    "id": "track-mp8zbaft-hhz",
+    "title": "Searching A Trillion Edges With Unicorn",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8zbaft-hhz/Searching_a_Trillion_Edges_with_Unicorn.m4a",
+    "tags": [
+      "graph",
+      "custom-prompt"
+    ]
   }
 ]
