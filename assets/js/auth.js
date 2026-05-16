@@ -1,13 +1,22 @@
-// PKCE OAuth flow with GitHub for the player's cross-device progress sync.
+// OAuth flow with GitHub for the player's cross-device progress sync.
 //
-// Why PKCE and not a paste-PAT flow like upload.html: visitors should be able to
-// sync without generating a PAT. PKCE works in-browser without a client_secret.
-// Scope is `gist` only — the token cannot touch this or any other repo.
+// Why an OAuth App and not a paste-PAT flow like upload.html: visitors should
+// be able to sync without generating a PAT. Scope is `gist` only — the token
+// cannot touch this or any other repo.
 //
-// Why a Worker proxy for the token exchange: github.com/login/oauth/access_token
-// sends NO Access-Control-Allow-Origin headers (verified empirically 2026-05-16),
-// so the browser cannot read the response. The Worker is a pure CORS relay; no
-// client secret is involved — that's the whole point of PKCE.
+// Why a Worker proxy for the token exchange:
+//   1. github.com/login/oauth/access_token sends NO Access-Control-Allow-Origin
+//      headers (verified empirically 2026-05-16), so the browser cannot read
+//      the response directly.
+//   2. GitHub OAuth Apps require client_secret on the token exchange even when
+//      the request carries a PKCE code_verifier (confirmed 2026-05-16 — GitHub
+//      ignores code_verifier on OAuth Apps). The Worker injects client_secret
+//      from its env so the browser never sees it.
+//
+// We still send code_challenge / code_verifier from the browser as defense in
+// depth: an attacker who intercepts the auth code from the redirect can't
+// redeem it without the verifier sitting in this tab's sessionStorage, even
+// though GitHub doesn't enforce that today.
 
 const CLIENT_ID       = 'Ov23lijxhsWUxPtzz4lN';
 const TOKEN_PROXY_URL = 'https://notebooklm-upload.luqmansen.workers.dev/oauth/token';
