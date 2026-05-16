@@ -165,6 +165,9 @@
   {
     "id": "track-mp84pwxn-wu2",
     "title": "How MonetDBX100 Solved The Database Bottleneck",
-    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp84pwxn-wu2/How_MonetDBX100_Solved_the_Database_Bottleneck.m4a"
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp84pwxn-wu2/How_MonetDBX100_Solved_the_Database_Bottleneck.m4a",
+    "tags": [
+      "column store"
+    ]
   }
 ]
