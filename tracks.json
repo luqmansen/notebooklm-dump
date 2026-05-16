@@ -128,5 +128,20 @@
     "id": "track-mp7hqnvd-2o1",
     "title": "How Microsoft Scaled SQL To 100 Terabytes",
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7hqnvd-2o1/How_Microsoft_Scaled_SQL_to_100_Terabytes.m4a"
+  },
+  {
+    "id": "track-mp848shx-3jr",
+    "title": "How Google Spanner Uses Atomic Clocks",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp848shx-3jr/How_Google_Spanner_uses_atomic_clocks.m4a"
+  },
+  {
+    "id": "track-mp848shx-dc8",
+    "title": "How Apache Spark Solved The Disk Bottleneck",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp848shx-dc8/How_Apache_Spark_Solved_the_Disk_Bottleneck.m4a"
+  },
+  {
+    "id": "track-mp848shx-wwl",
+    "title": "Why Database Protocols Hold Data Hostage",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp848shx-wwl/Why_database_protocols_hold_data_hostage.m4a"
   }
 ]
