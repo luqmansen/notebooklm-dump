@@ -28,6 +28,7 @@ let plyr = null;
 let active = null;       // current track object
 let catalog = [];        // full tracks.json
 let lastWrite = 0;
+const selectedTags = new Set(); // AND semantics — track must carry every selected tag
 
 function fmt(t) {
   if (!isFinite(t)) return '?';
@@ -89,29 +90,38 @@ function refreshTagFilter() {
   for (const t of catalog) {
     if (Array.isArray(t.tags)) for (const tag of t.tags) all.add(tag);
   }
-  const selected = $tagFilter.value;
+  // Drop selections that no longer exist in the catalog (e.g. tag was removed).
+  for (const tag of selectedTags) if (!all.has(tag)) selectedTags.delete(tag);
+
   const sorted = Array.from(all).sort((a, b) => a.localeCompare(b));
   $tagFilter.innerHTML = '';
-  const allOpt = document.createElement('option');
-  allOpt.value = '';
-  allOpt.textContent = 'All tags';
-  $tagFilter.appendChild(allOpt);
   for (const tag of sorted) {
-    const opt = document.createElement('option');
-    opt.value = tag;
-    opt.textContent = tag;
-    $tagFilter.appendChild(opt);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'tag-filter-chip';
+    chip.textContent = tag;
+    chip.setAttribute('aria-pressed', selectedTags.has(tag) ? 'true' : 'false');
+    if (selectedTags.has(tag)) chip.classList.add('active');
+    chip.addEventListener('click', () => {
+      if (selectedTags.has(tag)) selectedTags.delete(tag);
+      else selectedTags.add(tag);
+      chip.classList.toggle('active');
+      chip.setAttribute('aria-pressed', selectedTags.has(tag) ? 'true' : 'false');
+      renderList();
+    });
+    $tagFilter.appendChild(chip);
   }
-  if (sorted.includes(selected)) $tagFilter.value = selected;
 }
 
 function visibleTracks() {
   const query = $search.value.trim().toLowerCase();
-  const tag   = $tagFilter.value;
   return catalog
     .filter(t => {
       if (query && !t.title.toLowerCase().includes(query)) return false;
-      if (tag && !(Array.isArray(t.tags) && t.tags.includes(tag))) return false;
+      if (selectedTags.size > 0) {
+        if (!Array.isArray(t.tags)) return false;
+        for (const tag of selectedTags) if (!t.tags.includes(tag)) return false;
+      }
       return true;
     })
     .map(t => ({ t, status: trackStatus(t.id) }))
@@ -238,7 +248,6 @@ function updateActiveProgress() {
 }
 
 $search.addEventListener('input', renderList);
-$tagFilter.addEventListener('change', renderList);
 
 function selectTrack(track) {
   active = track;
