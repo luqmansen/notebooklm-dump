@@ -202,5 +202,18 @@
       "distributed-sql",
       "custom-prompt"
     ]
+  },
+  {
+    "id": "track-mp8ya1px-ewp",
+    "title": "Distributed Tracing With Google Dapper",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8ya1px-ewp/Distributed_Tracing_with_Google_Dapper.m4a"
+  },
+  {
+    "id": "track-mp8ya1px-3y7",
+    "title": "Why Google Monarch Stores Everything In RAM",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8ya1px-3y7/Why_Google_Monarch_stores_everything_in_RAM.m4a",
+    "tags": [
+      "in-memory"
+    ]
   }
 ]
