@@ -193,5 +193,14 @@
     "tags": [
       "distributed-sql"
     ]
+  },
+  {
+    "id": "track-mp8xs17i-pw4",
+    "title": "How Hive Translates SQL To MapReduce",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp8xs17i-pw4/How_Hive_translates_SQL_to_MapReduce.m4a",
+    "tags": [
+      "distributed-sql",
+      "custom-prompt"
+    ]
   }
 ]
