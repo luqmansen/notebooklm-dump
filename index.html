@@ -214,6 +214,17 @@
     font-size: 0.75rem;
   }
   footer a { color: var(--muted); }
+  footer .sep { margin: 0 0.5rem; opacity: 0.5; }
+  footer button.link {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+  }
+  footer button.link:hover { color: var(--text); }
 </style>
 </head>
 <body>
@@ -241,6 +252,8 @@
 
   <footer>
     <a href="upload.html">Upload (owner only)</a>
+    <span class="sep">·</span>
+    <button id="signin-btn" type="button" class="link">Sign in to sync</button>
   </footer>
 </div>
 

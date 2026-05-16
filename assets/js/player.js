@@ -1,3 +1,6 @@
+import * as sync from './sync.js';
+import { isAuthed, signIn, signOut } from './auth.js';
+
 const POS_KEY  = (id) => `pos:${id}`;
 const DONE_KEY = (id) => `done:${id}`;
 const DUR_KEY  = (id) => `dur:${id}`;   // cached so list can show % without loading audio
@@ -295,6 +298,7 @@ if ('mediaSession' in navigator) {
 function onMetadataReady() {
   if (active && isFinite($audio.duration) && $audio.duration > 0) {
     localStorage.setItem(DUR_KEY(active.id), String($audio.duration));
+    sync.markDirty(active.id);
     updateActiveProgress(); // upgrade any seconds-only label to a percentage
   }
   const saved = parseFloat(localStorage.getItem(POS_KEY(active.id)) || '0');
@@ -348,6 +352,7 @@ $audio.addEventListener('timeupdate', () => {
       // re-render so it joins the in-progress group at the top of the list.
       const hadPos = localStorage.getItem(POS_KEY(active.id)) !== null;
       localStorage.setItem(POS_KEY(active.id), String(t));
+      sync.markDirty(active.id);
       if (!hadPos) needsRerender = true;
     }
   }
@@ -360,7 +365,20 @@ $audio.addEventListener('ended', () => {
   if (!active) return;
   localStorage.removeItem(POS_KEY(active.id));
   localStorage.setItem(DONE_KEY(active.id), '1');
+  sync.markDirty(active.id);
   renderList();
+});
+
+// Pause closes the typical "switch devices mid-listen" gap — push immediately
+// instead of waiting for the 3 s debounce.
+$audio.addEventListener('pause', () => {
+  if (!active) return;
+  const t = $audio.currentTime;
+  if (t > RESUME_THRESHOLD_SEC && isFinite($audio.duration) && t < ($audio.duration - RESUME_THRESHOLD_SEC)) {
+    localStorage.setItem(POS_KEY(active.id), String(t));
+    sync.markDirty(active.id);
+  }
+  sync.flush();
 });
 
 function cleanupStalePositions() {
@@ -387,4 +405,26 @@ if (typeof Plyr !== 'undefined') {
   });
 }
 
-loadCatalog();
+const $signin = document.getElementById('signin-btn');
+if ($signin) {
+  function refreshSigninLabel() {
+    $signin.textContent = isAuthed() ? 'Sync on — sign out' : 'Sign in to sync';
+  }
+  refreshSigninLabel();
+  $signin.addEventListener('click', () => {
+    if (isAuthed()) {
+      if (confirm('Sign out?\n\nLocal progress stays in this browser. Sync stops until you sign in again.')) {
+        signOut();
+        location.reload();
+      }
+    } else {
+      signIn(location.href);
+    }
+  });
+}
+
+// Re-render whenever sync.init pulls remote state into localStorage so the
+// listing reflects gist progress immediately, no manual refresh needed.
+sync.setOnRemoteChange(renderList);
+
+loadCatalog().then(() => sync.init());
