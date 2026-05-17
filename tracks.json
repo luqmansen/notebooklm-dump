@@ -69,7 +69,10 @@
     "id": "track-mp7gf3ug-nk0",
     "title": "Dremel - Querying A Trillion Rows In Seconds",
     "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mp7gf3ug-nk0/Querying_a_trillion_rows_in_seconds.m4a",
-    "duration": 3081.218322
+    "duration": 3081.218322,
+    "tags": [
+      "column store"
+    ]
   },
   {
     "id": "track-mp7gf3ug-h59",
