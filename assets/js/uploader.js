@@ -268,9 +268,13 @@ async function loadLibrary() {
     if (!res.ok) throw new Error(`${res.status}`);
     const data = await res.json();
     const tracks = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    trackedSha = data.sha || null;
+    trackedList = trackedSha ? tracks : null;
     refreshKnownTags(tracks);
     renderLibrary(tracks);
   } catch (e) {
+    trackedSha = null;
+    trackedList = null;
     $library.innerHTML = `<div class="queue-empty">Failed to load tracks.json (${e.message})</div>`;
   }
 }
@@ -395,21 +399,48 @@ function renderLibrary(tracks) {
 }
 
 // SHA-aware tracks.json update. Caller passes a mutator function that gets the
-// parsed list and returns { list, msg } for the commit message. One retry on 409.
+// parsed list and returns { list, msg } for the commit message.
+//
+// Two consistency guards:
+// 1. trackedSha/trackedList cache the post-PUT sha so the next write skips the
+//    GET — GitHub's Contents API read replicas lag the write path by seconds,
+//    so an immediate GET after a successful PUT often returns the stale sha
+//    and the follow-up PUT fails with 409/422.
+// 2. libraryLock serializes concurrent updateLibrary calls so two fast tag
+//    edits cannot race on the same cached sha.
+let trackedSha = null;
+let trackedList = null;
+let libraryLock = Promise.resolve();
+
 async function updateLibrary(mutator) {
+  const run = libraryLock.then(() => updateLibraryInner(mutator), () => updateLibraryInner(mutator));
+  libraryLock = run.catch(() => {});
+  return run;
+}
+
+async function updateLibraryInner(mutator) {
   const token = localStorage.getItem(PAT_KEY);
   if (!token) throw new Error('not authenticated');
   const path = `repos/${OWNER}/${REPO}/contents/tracks.json`;
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    const getRes = await fetch(`https://api.github.com/${path}?ref=main`, { headers: ghHeaders(token) });
-    if (!getRes.ok) throw new Error(`get tracks.json ${getRes.status}`);
-    const meta = await getRes.json();
-    let list;
-    try {
-      list = JSON.parse(atob(meta.content.replace(/\n/g, '')));
-      if (!Array.isArray(list)) list = [];
-    } catch { list = []; }
+    let sha, list;
+    if (attempt === 0 && trackedSha && trackedList) {
+      sha = trackedSha;
+      list = JSON.parse(JSON.stringify(trackedList));
+    } else {
+      const getRes = await fetch(`https://api.github.com/${path}?ref=main`, {
+        headers: ghHeaders(token),
+        cache: 'no-store',
+      });
+      if (!getRes.ok) throw new Error(`get tracks.json ${getRes.status}`);
+      const meta = await getRes.json();
+      sha = meta.sha;
+      try {
+        list = JSON.parse(atob(meta.content.replace(/\n/g, '')));
+        if (!Array.isArray(list)) list = [];
+      } catch { list = []; }
+    }
 
     const { list: newList, msg } = mutator(list);
 
@@ -419,15 +450,29 @@ async function updateLibrary(mutator) {
       body: JSON.stringify({
         message: msg,
         content: base64FromString(JSON.stringify(newList, null, 2) + '\n'),
-        sha: meta.sha,
+        sha,
         branch: 'main',
       }),
     });
-    if (putRes.ok) return;
-    if (putRes.status === 409 && attempt < 2) {
+    if (putRes.ok) {
+      try {
+        const body = await putRes.json();
+        trackedSha = body?.content?.sha || null;
+        trackedList = trackedSha ? newList : null;
+      } catch {
+        trackedSha = null;
+        trackedList = null;
+      }
+      return;
+    }
+    if ((putRes.status === 409 || putRes.status === 422) && attempt < 2) {
+      trackedSha = null;
+      trackedList = null;
       await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
       continue;
     }
+    trackedSha = null;
+    trackedList = null;
     throw new Error(`put tracks.json ${putRes.status}: ${await putRes.text()}`);
   }
 }
