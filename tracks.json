@@ -365,5 +365,25 @@
       "facebook"
     ],
     "duration": 3619.48
+  },
+  {
+    "id": "track-mparet58-7km",
+    "title": "Fixing Presto Query Math With History",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mparet58-7km/Fixing_Presto_query_math_with_history.m4a",
+    "tags": [
+      "distributed-sql",
+      "facebook"
+    ],
+    "duration": 3479.973991
+  },
+  {
+    "id": "track-mparet58-sqm",
+    "title": "Meta S Unified Exabyte Scale Presto Engine",
+    "url": "https://github.com/luqmansen/notebooklm-dump/releases/download/track-mparet58-sqm/Meta_s_unified_exabyte_scale_Presto_engine.m4a",
+    "tags": [
+      "distributed-sql",
+      "facebook"
+    ],
+    "duration": 3191.977506
   }
 ]
