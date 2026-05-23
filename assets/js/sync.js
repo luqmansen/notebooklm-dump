@@ -9,18 +9,20 @@
 // other and one clobbers the other. Accepted — worst case is a few-second
 // rewind on the loser. See [[project-oauth-token-cors]] for the auth path.
 //
-// Write cadence: 3-second debounce during continuous playback, plus immediate
-// flush on pause / ended / seeked / visibility-hidden / pagehide. Worst case
-// is ~1,200 writes/hour on non-stop listening, well under the 5,000/hour
-// authenticated REST limit and the secondary "one mutation per second"
-// threshold.
+// Write cadence: PATCH /gists/{id} is metered by GitHub in a dedicated
+// `gist_update` bucket of 100 mutations/hour (verified 2026-05-23 from a real
+// 403's x-ratelimit-resource header — not the 5,000/hr primary, not the
+// ~500/hr content-creation secondary). Average ceiling = 1 PATCH per 36 s.
+// We debounce at 60 s, giving 60 writes/hr worst case with headroom for
+// pause/visibility bursts. Lifecycle handlers are coalesced (one flush per
+// hidden→visible transition) and the pause-immediate path is throttled.
 
 import { getToken } from './auth.js';
 
 const GIST_FILENAME    = 'notebooklm-dump-progress.json';
 const GIST_DESCRIPTION = 'notebooklm-dump player progress';
 const GIST_ID_KEY      = 'progress_gist_id';
-const DEBOUNCE_MS      = 3000;
+const DEBOUNCE_MS      = 60000; // see header comment — gist_update bucket is 100/hr
 
 const POS_KEY     = (id) => `pos:${id}`;
 const DONE_KEY    = (id) => `done:${id}`;
@@ -34,6 +36,8 @@ let writeInFlight = null;
 let initialized   = false;
 let gistId        = null;
 let onRemoteChange = null;      // optional callback when init pulls remote → local
+let holdUntil     = 0;          // epoch-ms; skip PATCH until then (set by 403 backoff)
+let lastFlushAt   = 0;          // epoch-ms of last successful (or attempted) PATCH
 
 function ghHeaders(token, extra = {}) {
   return {
@@ -150,7 +154,31 @@ async function writeGist(token, id, content, opts = {}) {
     // browser side, well above a realistic progress blob (~100 B per track).
     keepalive: !!opts.keepalive,
   });
-  if (!r.ok) throw new Error(`write gist ${r.status}`);
+  if (r.ok) return;
+
+  // 403 = primary or secondary rate limit. Honor whichever signal GitHub sent:
+  // `retry-after` (seconds) for secondary limits, `x-ratelimit-reset` (epoch
+  // seconds) for primary/per-resource buckets. Fall back to 5 min if neither
+  // is present so we don't hammer.
+  if (r.status === 403 || r.status === 429) {
+    const now = Date.now();
+    const retryAfter = parseInt(r.headers.get('retry-after') || '', 10);
+    const resetEpoch = parseInt(r.headers.get('x-ratelimit-reset') || '', 10);
+    let until = now + 5 * 60 * 1000;
+    if (Number.isFinite(retryAfter) && retryAfter > 0) {
+      until = now + retryAfter * 1000;
+    } else if (Number.isFinite(resetEpoch) && resetEpoch > 0) {
+      until = resetEpoch * 1000;
+    }
+    holdUntil = Math.max(holdUntil, until);
+    const resource = r.headers.get('x-ratelimit-resource') || 'unknown';
+    const remaining = r.headers.get('x-ratelimit-remaining');
+    console.warn(
+      `sync: gist PATCH rate-limited (resource=${resource}, remaining=${remaining}), ` +
+      `holding off until ${new Date(holdUntil).toISOString()}`
+    );
+  }
+  throw new Error(`write gist ${r.status}`);
 }
 
 // Reconcile remote ↔ local on sign-in / page load.
@@ -241,21 +269,43 @@ export function markDirty(id) {
 
 function scheduleFlush() {
   if (debounceTimer) return;
+  // If we're inside a rate-limit cooldown, wait it out instead of firing at
+  // DEBOUNCE_MS and getting another 403.
+  const wait = Math.max(DEBOUNCE_MS, holdUntil - Date.now());
   debounceTimer = setTimeout(() => {
     debounceTimer = null;
     flush().catch(e => console.error('sync flush error:', e));
-  }, DEBOUNCE_MS);
+  }, wait);
 }
+
+// Minimum spacing between non-keepalive PATCHes. Keepalive flushes
+// (visibilitychange/pagehide/beforeunload) bypass this — they may be our last
+// chance to persist before the tab dies.
+const MIN_FLUSH_INTERVAL_MS = 30000;
 
 export async function flush(opts = {}) {
   if (!initialized || dirty.size === 0) return;
   if (writeInFlight) return writeInFlight;
   const token = getToken();
   if (!token || !gistId) return;
+  // Respect the cooldown — defer instead of clearing the dirty set so changes
+  // aren't lost across the holdoff window.
+  if (Date.now() < holdUntil) {
+    if (!debounceTimer) scheduleFlush();
+    return;
+  }
+  // Throttle: if a flush happened recently and this isn't a last-chance
+  // keepalive write, defer to the debounce timer. Without this, rapid
+  // pause/resume can fire one PATCH per pause and burn the gist_update bucket.
+  if (!opts.keepalive && Date.now() - lastFlushAt < MIN_FLUSH_INTERVAL_MS) {
+    if (!debounceTimer) scheduleFlush();
+    return;
+  }
   if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null; }
 
   dirty.clear();
   const snapshot = state;
+  lastFlushAt = Date.now();
 
   writeInFlight = (async () => {
     try {
@@ -272,8 +322,19 @@ export async function flush(opts = {}) {
 
 // Best-effort flush on tab close / hide. keepalive lets the PATCH survive the
 // page lifecycle event. Browsers may still cancel — accept the loss.
+//
+// All three events can fire within ms of each other on a single tab-close, so
+// we coalesce: at most one keepalive PATCH per hidden transition. Re-armed
+// when the page becomes visible again.
+let lifecycleFlushed = false;
+function lifecycleFlush() {
+  if (lifecycleFlushed) return;
+  lifecycleFlushed = true;
+  flush({ keepalive: true });
+}
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') flush({ keepalive: true });
+  if (document.visibilityState === 'hidden') lifecycleFlush();
+  else lifecycleFlushed = false;
 });
-window.addEventListener('pagehide',     () => flush({ keepalive: true }));
-window.addEventListener('beforeunload', () => flush({ keepalive: true }));
+window.addEventListener('pagehide',     lifecycleFlush);
+window.addEventListener('beforeunload',  lifecycleFlush);
